@@ -1,0 +1,1299 @@
+##############################################################################
+#                                                                            #
+#                                                      30/Oct/2005  13:40:12 #
+# IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version                #
+# Copyright 1996-2005 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sha #
+#                    _based_aka.c                                            #
+#    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11\ #
+#                    Release\Obj\ -D NDEBUG -lCN                             #
+#                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\     #
+#                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List\ #
+#                     --initializers_in_flash -z9 --cross_call_passes=2      #
+#                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR    #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\" -I "E:\Program Files\IAR              #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\CLIB\" --eeprom_size 512                #
+#                    E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sha #
+#                    _based_aka.c                                            #
+#    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\test #
+#                    _sha_based_aka.lst                                      #
+#    Object file  =  E:\yanglq\projects\agsm\firmware_ed11\Release\Obj\test_ #
+#                    sha_based_aka.r90                                       #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sha_based_aka.c
+      1          /* test_sha_based_aka.c */
+      2          
+      3          #include <stdio.h>
+      4          #include <string.h>
+      5          #include "aka.h"
+      6          
+      7          static uchar K[]={0xad,0x1b,0x5a,0x15,0x9b,0xe8,0x6b,0x2c,
+      8          		   0xa6,0x6c,0x7a,0xe4,0x0b,0xba,0x9b,0x9d};
+      9          static uchar Fmk[L_FMK] = { 'A', 'H', 'A', 'G' };
+
+   \                                 In segment EEPROM_I, align 1, keep-with-next
+     10          __eeprom volatile uchar SQNms[L_SQN]={0x00,0x00,0x00,0x00,0x00,0x00};
+   \                     SQNms:
+   \   00000000   000000000000       DB 0, 0, 0, 0, 0, 0
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_I>`
+     11          static uchar fi0=0x41;
+   \                     ??fi0:
+   \   00000000                      DS 1
+   \   00000001                      REQUIRE `?<Initializer for fi0>`
+   \   00000001                      DS 1
+   \   00000002                      REQUIRE `?<Initializer for fi1>`
+   \   00000002                      DS 1
+   \   00000003                      REQUIRE `?<Initializer for fi1star>`
+   \   00000003                      DS 1
+   \   00000004                      REQUIRE `?<Initializer for fi2>`
+   \   00000004                      DS 1
+   \   00000005                      REQUIRE `?<Initializer for fi3>`
+   \   00000005                      DS 1
+   \   00000006                      REQUIRE `?<Initializer for fi4>`
+   \   00000006                      DS 1
+   \   00000007                      REQUIRE `?<Initializer for fi5>`
+   \   00000007                      DS 1
+   \   00000008                      REQUIRE `?<Initializer for fi5star>`
+   \   00000008                      DS 16
+   \   00000018                      REQUIRE `?<Initializer for K>`
+   \   00000018                      DS 4
+   \   0000001C                      REQUIRE `?<Initializer for Fmk>`
+     12          static uchar fi1=0x42;
+     13          static uchar fi1star=0x43;
+     14          static uchar fi2=0x44;
+     15          static uchar fi3=0x45;
+     16          static uchar fi4=0x46;
+     17          static uchar fi5=0x47;
+     18          static uchar fi5star=0x48;
+
+   \                                 In segment EEPROM_I, align 1, keep-with-next
+     19          __eeprom volatile unsigned char ee_var = 0xff;
+   \                     ee_var:
+   \   00000000   FF                 DB 255
+     20          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     21          void test_eeprom()
+   \                     test_eeprom:
+     22          {
+     23            unsigned char temp;
+     24          
+     25            temp = ee_var;
+   \   00000000   ....               LDI     R20, LOW(ee_var)
+   \   00000002   ....               LDI     R21, (ee_var) >> 8
+   \   00000004   ....               RCALL   __eeget8_16
+     26            PORTB = temp;
+   \   00000006   B905               OUT     0x05, R16
+     27          }
+   \   00000008   9508               RET
+     28          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     29          uchar run_aka(uchar *rand_autn, uchar len, uchar *res)
+   \                     run_aka:
+     30          {
+   \   00000000   ....               RCALL   ?PROLOGUE12_L09
+   \   00000002                      REQUIRE ?Register_R4_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R5_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R6_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R7_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R8_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R9_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R10_is_cg_reg
+   \   00000002                      REQUIRE ?Register_R11_is_cg_reg
+   \   00000002   9764               SBIW    R29:R28, 20
+   \   00000004   01C8               MOVW    R25:R24, R17:R16
+   \   00000006   012A               MOVW    R5:R4, R21:R20
+     31            uchar AK[L_AK];
+     32            uchar SQN[L_SQN];
+     33            uchar XMAC[L_MACA];
+     34            uchar *RAND = &rand_autn[1];
+   \   00000008   0148               MOVW    R9:R8, R17:R16
+   \   0000000A   E001               LDI     R16, 1
+   \   0000000C   0E80               ADD     R8, R16
+   \   0000000E   E000               LDI     R16, 0
+   \   00000010   1E90               ADC     R9, R16
+     35            uchar *AMF = &rand_autn[1+16+1+6];
+   \   00000012   015C               MOVW    R11:R10, R25:R24
+   \   00000014   E108               LDI     R16, 24
+   \   00000016   0EA0               ADD     R10, R16
+   \   00000018   E000               LDI     R16, 0
+   \   0000001A   1EB0               ADC     R11, R16
+     36            uchar *MAC = &rand_autn[1+16+1+6+2];
+   \   0000001C   013C               MOVW    R7:R6, R25:R24
+   \   0000001E   E10A               LDI     R16, 26
+   \   00000020   0E60               ADD     R6, R16
+   \   00000022   E000               LDI     R16, 0
+   \   00000024   1E70               ADC     R7, R16
+     37            int i;
+     38          
+     39            f5(K,fi5,RAND,Fmk,AK);
+   \   00000026   ....               LDI     R26, LOW(??fi0)
+   \   00000028   ....               LDI     R27, (??fi0) >> 8
+   \   0000002A   018E               MOVW    R17:R16, R29:R28
+   \   0000002C   5F0A               SUBI    R16, 250
+   \   0000002E   ....               RCALL   ??Subroutine1_0
+   \                     ??CrossCallReturnLabel_88:
+   \   00000030   ....               RCALL   ?Subroutine12
+     40            for(i=0; i<L_SQN; i++)
+   \                     ??CrossCallReturnLabel_27:
+   \   00000032   ....               RCALL   ?Subroutine17
+     41            {
+     42              SQN[i] = AK[i] ^ rand_autn[i+18];
+   \                     ??CrossCallReturnLabel_36:
+   \   00000034   ....               RCALL   ?Subroutine28
+   \                     ??CrossCallReturnLabel_73:
+   \   00000036   8116               LDD     R17, Z+6
+   \   00000038   01FC               MOVW    R31:R30, R25:R24
+   \   0000003A   0FE2               ADD     R30, R18
+   \   0000003C   1FF3               ADC     R31, R19
+   \   0000003E   8942               LDD     R20, Z+18
+   \   00000040   2741               EOR     R20, R17
+   \   00000042   ....               RCALL   ?Subroutine28
+   \                     ??CrossCallReturnLabel_74:
+   \   00000044   8340               ST      Z, R20
+     43            }
+   \   00000046   ....               RCALL   ?Subroutine4
+   \                     ??CrossCallReturnLabel_0:
+   \   00000048   F3AC               BRLT    ??CrossCallReturnLabel_36
+     44            f1(K,fi1,RAND,Fmk,SQN,AMF,XMAC);
+   \   0000004A   ....               RCALL   ?Subroutine1
+   \                     ??CrossCallReturnLabel_89:
+   \   0000004C   ....               RCALL   ?Subroutine13
+     45            //verify MAC
+     46            if(memcmp(XMAC,MAC,8))
+   \                     ??CrossCallReturnLabel_29:
+   \   0000004E   E048               LDI     R20, 8
+   \   00000050   E050               LDI     R21, 0
+   \   00000052   0193               MOVW    R19:R18, R7:R6
+   \   00000054   018E               MOVW    R17:R16, R29:R28
+   \   00000056   5F04               SUBI    R16, 244
+   \   00000058   4F1F               SBCI    R17, 255
+   \   0000005A   ....               RCALL   memcmp
+   \   0000005C   2B01               OR      R16, R17
+   \   0000005E   F039               BREQ    ??run_aka_0
+     47            {//"MAC != XMAC"
+     48              *res++ = 0x98;
+   \   00000060   E908               LDI     R16, 152
+   \   00000062   01F2               MOVW    R31:R30, R5:R4
+   \   00000064   8300               ST      Z, R16
+     49              *res++ = 0x62;
+   \   00000066   E602               LDI     R16, 98
+   \   00000068   8301               STD     Z+1, R16
+     50              return 2;
+   \   0000006A   E002               LDI     R16, 2
+   \   0000006C   C063               RJMP    ??run_aka_1
+     51            }else{//MAC ok
+     52              //Verify that SQN is in the correct range
+     53              for(i=0; i<L_SQN; i++)
+   \                     ??run_aka_0:
+   \   0000006E   ....               RCALL   ?Subroutine17
+     54              {
+     55                if(SQN[i] - SQNms[i] == 1)
+   \                     ??CrossCallReturnLabel_37:
+   \   00000070   ....               RCALL   ?Subroutine28
+   \                     ??CrossCallReturnLabel_75:
+   \   00000072   8000               LD      R0, Z
+   \   00000074   2411               CLR     R1
+   \   00000076   ....               RCALL   ?Subroutine18
+   \                     ??CrossCallReturnLabel_41:
+   \   00000078   1A00               SUB     R0, R16
+   \   0000007A   0811               SBC     R1, R1
+   \   0000007C   E001               LDI     R16, 1
+   \   0000007E   1600               CP      R0, R16
+   \   00000080   0611               CPC     R1, R17
+   \   00000082   F571               BRNE    ??run_aka_2
+     56                {
+     57                  for(i=i+1; i<L_SQN; i++)
+   \                     ??run_aka_3:
+   \   00000084   ....               RCALL   ?Subroutine4
+   \                     ??CrossCallReturnLabel_1:
+   \   00000086   F44C               BRGE    ??run_aka_4
+     58                  {
+     59                    if(SQNms[i] - SQN[i] != 0xff)
+   \   00000088   ....               RCALL   ?Subroutine18
+   \                     ??CrossCallReturnLabel_42:
+   \   0000008A   ....               RCALL   ?Subroutine28
+   \                     ??CrossCallReturnLabel_76:
+   \   0000008C   8140               LD      R20, Z
+   \   0000008E   1B04               SUB     R16, R20
+   \   00000090   4010               SBCI    R17, 0
+   \   00000092   3F0F               CPI     R16, 255
+   \   00000094   4010               SBCI    R17, 0
+   \   00000096   F549               BRNE    ??run_aka_5
+   \   00000098   CFF5               RJMP    ??run_aka_3
+     60                      goto resync;
+     61                  }
+     62                  //if SQN - SQNms == 1, i think SQN is correct
+     63                  for(i=0; i<L_SQN; i++)
+   \                     ??run_aka_4:
+   \   0000009A   ....               RCALL   ?Subroutine17
+     64                    SQNms[i] = SQN[i];
+   \                     ??CrossCallReturnLabel_38:
+   \   0000009C   ....               RCALL   ?Subroutine28
+   \                     ??CrossCallReturnLabel_77:
+   \   0000009E   8100               LD      R16, Z
+   \   000000A0   ....               RCALL   ?Subroutine27
+   \                     ??CrossCallReturnLabel_70:
+   \   000000A2   01AB               MOVW    R21:R20, R23:R22
+   \   000000A4   ....               RCALL   __eeput8_16
+   \   000000A6   ....               RCALL   ?Subroutine4
+   \                     ??CrossCallReturnLabel_2:
+   \   000000A8   F3CC               BRLT    ??CrossCallReturnLabel_38
+     65                  *res++ = 0xdb;
+   \   000000AA   ED0B               LDI     R16, 219
+   \   000000AC   01F2               MOVW    R31:R30, R5:R4
+   \   000000AE   9301               ST      Z+, R16
+     66                  *res++ = 16;
+   \   000000B0   E100               LDI     R16, 16
+   \   000000B2   ....               RCALL   ?Subroutine20
+     67                  f2(K,fi2,RAND,Fmk,res,L_RES);
+   \                     ??CrossCallReturnLabel_43:
+   \   000000B4   ....               RCALL   ?Subroutine26
+   \                     ??CrossCallReturnLabel_66:
+   \   000000B6   ....               RCALL   ?Subroutine9
+   \                     ??CrossCallReturnLabel_14:
+   \   000000B8   ....               RCALL   ?Subroutine14
+     68                  res += 16;
+   \                     ??CrossCallReturnLabel_31:
+   \   000000BA   ....               RCALL   ?Subroutine8
+     69                  *res++ = 16;
+   \                     ??CrossCallReturnLabel_12:
+   \   000000BC   ....               RCALL   ?Subroutine20
+     70          	f3(K,fi3,RAND,Fmk,res);
+   \                     ??CrossCallReturnLabel_44:
+   \   000000BE   ....               RCALL   ?Subroutine9
+   \                     ??CrossCallReturnLabel_15:
+   \   000000C0   ....               RCALL   ?Subroutine15
+     71                  res += 16;
+   \                     ??CrossCallReturnLabel_33:
+   \   000000C2   ....               RCALL   ?Subroutine8
+     72                  *res++ = 16;
+   \                     ??CrossCallReturnLabel_13:
+   \   000000C4   8300               ST      Z, R16
+     73          	f4(K,fi4,RAND,Fmk,res);
+   \   000000C6   E001               LDI     R16, 1
+   \   000000C8   0E40               ADD     R4, R16
+   \   000000CA   E000               LDI     R16, 0
+   \   000000CC   1E50               ADC     R5, R16
+   \   000000CE   925A               ST      -Y, R5
+   \   000000D0   924A               ST      -Y, R4
+   \   000000D2   ....               RCALL   ?Subroutine25
+   \                     ??CrossCallReturnLabel_87:
+   \   000000D4   8125               LDD     R18, Z+5
+   \   000000D6   9618               ADIW    R27:R26, 8
+   \   000000D8   018D               MOVW    R17:R16, R27:R26
+   \   000000DA   ....               RCALL   f4
+     74                  return 52;
+   \   000000DC   E304               LDI     R16, 52
+   \   000000DE   C02A               RJMP    ??run_aka_1
+     75                }
+     76              }
+   \                     ??run_aka_2:
+   \   000000E0   5F2F               SUBI    R18, 255
+   \   000000E2   4F3F               SBCI    R19, 255
+   \   000000E4   3026               CPI     R18, 6
+   \   000000E6   0731               CPC     R19, R17
+   \   000000E8   F21C               BRLT    ??CrossCallReturnLabel_37
+     77          resync:
+     78              *res++ = 0xdc;
+   \                     ??run_aka_5:
+   \   000000EA   ED0C               LDI     R16, 220
+   \   000000EC   01F2               MOVW    R31:R30, R5:R4
+   \   000000EE   9301               ST      Z+, R16
+     79              *res++ = 14;
+   \   000000F0   E00E               LDI     R16, 14
+   \   000000F2   ....               RCALL   ?Subroutine20
+     80              f5star(K,fi5star,RAND,Fmk,AK);
+   \                     ??CrossCallReturnLabel_45:
+   \   000000F4   018E               MOVW    R17:R16, R29:R28
+   \   000000F6   5F0A               SUBI    R16, 250
+   \   000000F8   ....               RCALL   ??Subroutine1_0
+   \                     ??CrossCallReturnLabel_90:
+   \   000000FA   ....               RCALL   ?Subroutine16
+     81              for(i=0; i<L_SQN; i++)
+   \                     ??CrossCallReturnLabel_35:
+   \   000000FC   ....               RCALL   ?Subroutine17
+     82              {
+     83                *res++ = SQNms[i] ^ AK[i];
+   \                     ??CrossCallReturnLabel_39:
+   \   000000FE   ....               RCALL   ?Subroutine27
+   \                     ??CrossCallReturnLabel_71:
+   \   00000100   ....               RCALL   ?Subroutine7
+   \                     ??CrossCallReturnLabel_79:
+   \   00000102   8116               LDD     R17, Z+6
+   \   00000104   2710               EOR     R17, R16
+   \   00000106   01F2               MOVW    R31:R30, R5:R4
+   \   00000108   9311               ST      Z+, R17
+   \   0000010A   012F               MOVW    R5:R4, R31:R30
+     84                SQN[i] = SQNms[i];
+   \   0000010C   ....               RCALL   ?Subroutine7
+   \                     ??CrossCallReturnLabel_80:
+   \   0000010E   8300               ST      Z, R16
+     85              }
+   \   00000110   ....               RCALL   ?Subroutine4
+   \                     ??CrossCallReturnLabel_3:
+   \   00000112   F3AC               BRLT    ??CrossCallReturnLabel_39
+     86              f1star(K,fi1star,RAND,Fmk,SQN,AMF,XMAC);
+   \   00000114   ....               RCALL   ?Subroutine1
+   \                     ??CrossCallReturnLabel_91:
+   \   00000116   8122               LDD     R18, Z+2
+   \   00000118   9618               ADIW    R27:R26, 8
+   \   0000011A   018D               MOVW    R17:R16, R27:R26
+   \   0000011C   ....               RCALL   f1star
+     87              for(i=0; i<8; i++)
+   \   0000011E   ....               RCALL   ?Subroutine17
+     88                *res++ = XMAC[i];
+   \                     ??CrossCallReturnLabel_40:
+   \   00000120   ....               RCALL   ?Subroutine28
+   \                     ??CrossCallReturnLabel_78:
+   \   00000122   8504               LDD     R16, Z+12
+   \   00000124   01F2               MOVW    R31:R30, R5:R4
+   \   00000126   ....               RCALL   ?Subroutine20
+   \                     ??CrossCallReturnLabel_46:
+   \   00000128   5F2F               SUBI    R18, 255
+   \   0000012A   4F3F               SBCI    R19, 255
+   \   0000012C   3028               CPI     R18, 8
+   \   0000012E   ....               RCALL   ??Subroutine4_0
+   \                     ??CrossCallReturnLabel_4:
+   \   00000130   F3BC               BRLT    ??CrossCallReturnLabel_40
+     89              return 16;
+   \   00000132   E100               LDI     R16, 16
+   \                     ??run_aka_1:
+   \   00000134   9664               ADIW    R29:R28, 20
+   \   00000136   E0EC               LDI     R30, 12
+   \   00000138   ....               RJMP    ?EPILOGUE_B12_L09
+     90            }
+     91          }
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine26:
+   \   00000000   E010               LDI     R17, 0
+   \                     ??Subroutine26_0:
+   \   00000002   931A               ST      -Y, R17
+   \   00000004   930A               ST      -Y, R16
+   \   00000006   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine20:
+   \   00000000   9301               ST      Z+, R16
+   \   00000002   012F               MOVW    R5:R4, R31:R30
+   \   00000004   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine27:
+   \   00000000   ....               LDI     R22, LOW(SQNms)
+   \   00000002   ....               LDI     R23, (SQNms) >> 8
+   \   00000004   0F62               ADD     R22, R18
+   \   00000006   1F73               ADC     R23, R19
+   \   00000008   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine18:
+   \   00000000   ....               RCALL   ?Subroutine27
+   \                     ??CrossCallReturnLabel_72:
+   \   00000002   01AB               MOVW    R21:R20, R23:R22
+   \   00000004   ....               RCALL   __eeget8_16
+   \   00000006   E010               LDI     R17, 0
+   \   00000008   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine17:
+   \   00000000   E020               LDI     R18, 0
+   \   00000002   E030               LDI     R19, 0
+   \   00000004   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine28:
+   \   00000000   01FE               MOVW    R31:R30, R29:R28
+   \   00000002   0FE2               ADD     R30, R18
+   \   00000004   1FF3               ADC     R31, R19
+   \   00000006   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine9:
+   \   00000000   93FA               ST      -Y, R31
+   \   00000002   93EA               ST      -Y, R30
+   \   00000004   ....               RJMP    ?Subroutine25
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine8:
+   \   00000000   E100               LDI     R16, 16
+   \   00000002   0E40               ADD     R4, R16
+   \   00000004   E000               LDI     R16, 0
+   \   00000006   1E50               ADC     R5, R16
+   \   00000008   E100               LDI     R16, 16
+   \   0000000A   01F2               MOVW    R31:R30, R5:R4
+   \   0000000C   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine7:
+   \   00000000   01AB               MOVW    R21:R20, R23:R22
+   \   00000002   ....               RCALL   __eeget8_16
+   \   00000004   ....               RJMP    ?Subroutine28
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine4:
+   \   00000000   5F2F               SUBI    R18, 255
+   \   00000002   4F3F               SBCI    R19, 255
+   \   00000004   3026               CPI     R18, 6
+   \                     ??Subroutine4_0:
+   \   00000006   E000               LDI     R16, 0
+   \   00000008   0730               CPC     R19, R16
+   \   0000000A   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine1:
+   \   00000000   018E               MOVW    R17:R16, R29:R28
+   \   00000002   5F04               SUBI    R16, 244
+   \   00000004   4F1F               SBCI    R17, 255
+   \   00000006   ....               RCALL   ??Subroutine26_0
+   \                     ??CrossCallReturnLabel_68:
+   \   00000008   92BA               ST      -Y, R11
+   \   0000000A   92AA               ST      -Y, R10
+   \   0000000C   018E               MOVW    R17:R16, R29:R28
+   \   0000000E   5F0C               SUBI    R16, 252
+   \                     ??Subroutine1_0:
+   \   00000010   4F1F               SBCI    R17, 255
+   \   00000012   ....               RCALL   ??Subroutine26_0
+   \                     ??CrossCallReturnLabel_69:
+   \   00000014                      REQUIRE ?Subroutine25
+   \   00000014                      ;               // Fall through to label ?Subroutine25
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine25:
+   \   00000000   01BD               MOVW    R23:R22, R27:R26
+   \   00000002   5E68               SUBI    R22, 232
+   \   00000004   4F7F               SBCI    R23, 255
+   \   00000006   01A4               MOVW    R21:R20, R9:R8
+   \   00000008   ....               RJMP    ??Subroutine29_0
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine16:
+   \   00000000   8127               LDD     R18, Z+7
+   \   00000002   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_65:
+   \   00000004   ....               RJMP    f5star
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine15:
+   \   00000000   8124               LDD     R18, Z+4
+   \   00000002   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_64:
+   \   00000004   ....               RJMP    f3
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine14:
+   \   00000000   8123               LDD     R18, Z+3
+   \   00000002   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_63:
+   \   00000004   ....               RJMP    f2
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine24:
+   \   00000000   018D               MOVW    R17:R16, R27:R26
+   \   00000002   5F08               SUBI    R16, 248
+   \   00000004   4F1F               SBCI    R17, 255
+   \   00000006   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine13:
+   \   00000000   8121               LDD     R18, Z+1
+   \   00000002   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_62:
+   \   00000004   ....               RJMP    f1
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine12:
+   \   00000000   8126               LDD     R18, Z+6
+   \   00000002   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_61:
+   \   00000004   ....               RJMP    f5
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine29:
+   \   00000000   4F5F               SBCI    R21, 255
+   \                     ??Subroutine29_0:
+   \   00000002   01FD               MOVW    R31:R30, R27:R26
+   \   00000004   9508               RET
+     92          
+     93          //#define DEBUG
+     94          #ifdef DEBUG
+     95          #define dbg_printf(...) printf(__VA_ARGS__)
+     96          #else
+     97          #define dbg_printf(...)
+     98          #endif
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_I>`
+     99          unsigned char *msg_data =
+   \                     msg_data:
+   \   00000000                      DS 2
+   \   00000002                      REQUIRE `?<Initializer for msg_data>`
+    100          	"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    101          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    102          void pause(void)
+   \                     pause:
+    103          {
+    104          	dbg_printf("Press any key to continue\n");
+    105          #ifdef DEBUG
+    106          	getchar();
+    107          #endif
+    108          }
+   \   00000000   9508               RET
+    109          
+    110          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    111          void test_aka()
+   \                     test_aka:
+    112          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+   \   00000002   97EF               SBIW    R29:R28, 63
+   \   00000004   97EF               SBIW    R29:R28, 63
+   \   00000006   97E8               SBIW    R29:R28, 56
+    113                  uchar seed[]={0xb0,0xab,0xb9,0x9d,0x6a,0xc6,0xa7,0x4e,
+    114          			0xb9,0x8e,0xb6,0xc2,0xda,0xb1,0xa5,0x51};
+   \   00000008   019E               MOVW    R19:R18, R29:R28
+   \   0000000A   552A               SUBI    R18, 90
+   \   0000000C   4F3F               SBCI    R19, 255
+   \   0000000E   0189               MOVW    R17:R16, R19:R18
+   \   00000010   ....               LDI     R30, LOW(`?<Constant {(uchar)'\\260', (uchar)'\\253', (uch`)
+   \   00000012   ....               LDI     R31, (`?<Constant {(uchar)'\\260', (uchar)'\\253', (uch`) >> 8
+   \   00000014   E140               LDI     R20, 16
+   \   00000016   E050               LDI     R21, 0
+   \   00000018   ....               RCALL   ?ML_FLASH_SRAM_16EC_16_L07
+    115          
+    116          	uchar RAND[L_RAND];
+    117          
+    118          	uchar CK[L_CK];
+    119          	uchar IK[L_IK];
+    120                  uchar UAK[L_UAK];
+    121          
+    122          	uchar MACA[L_MACA];
+    123          	uchar MACS[L_MACS];
+    124          	uchar RES[L_RES];
+    125          	uchar AK[L_AK];
+    126          	uchar AKS[L_AKS];
+    127          
+    128          	uchar SQN[L_SQN]={0x00,0x00,0x00,0x00,0x00,0x01};
+   \   0000001A   019E               MOVW    R19:R18, R29:R28
+   \   0000001C   5E2E               SUBI    R18, 238
+   \   0000001E   4F3F               SBCI    R19, 255
+   \   00000020   0189               MOVW    R17:R16, R19:R18
+   \   00000022   E046               LDI     R20, 6
+   \   00000024   ....               RCALL   ?ML_FLASH_SRAM_16EC_16_L07
+    129          	uchar fi11;
+    130          
+    131          	uchar buff1[L_RAND/2],buff2[L_RAND/2];
+    132          
+    133          	uchar AMF[2];
+    134                  uchar RAND_AUTN[34];
+    135          	int i;
+    136          
+    137                  fi11 = 0x50;
+    138          	dbg_printf("test vector for f0:\n");
+    139          	dbg_printf("input section\n");
+    140          	dbg_printf("seed is:	");
+    141          	for(i=0;i<L_KEY;i++)
+    142          		dbg_printf("%02x ",seed[i]);
+    143          	dbg_printf("\n");
+    144          	dbg_printf("fi0 is:		%02x\n",fi0);
+    145          	dbg_printf("Fmk is:		");
+    146          	for (i=0;i<L_FMK;i++)
+    147          		dbg_printf("%02x ",Fmk[i]);
+    148          	dbg_printf("\n");
+    149          
+    150          	dbg_printf("\n");
+    151          
+    152          	f0(seed,fi0,Fmk,buff1);
+   \   00000026   ....               LDI     R26, LOW(??fi0)
+   \   00000028   ....               LDI     R27, (??fi0) >> 8
+   \   0000002A   01BE               MOVW    R23:R22, R29:R28
+   \   0000002C   5D6A               SUBI    R22, 218
+   \   0000002E   ....               RCALL   ?Subroutine6
+    153          	f0(seed,fi0,Fmk,buff2);
+   \                     ??CrossCallReturnLabel_11:
+   \   00000030   01BE               MOVW    R23:R22, R29:R28
+   \   00000032   5D62               SUBI    R22, 210
+   \   00000034   ....               RCALL   ?Subroutine6
+    154          
+    155          	dbg_printf("output section\n");
+    156          	dbg_printf("f0 	RAND:	");
+    157          	for (i=0;i<L_RAND/2;i++)
+    158          		dbg_printf("%02x ",buff1[i]);
+    159          	for (i=0;i<L_RAND/2;i++)
+    160          		dbg_printf("%02x ",buff2[i]);
+    161          	dbg_printf("\n");
+    162          
+    163          	pause();
+    164          
+    165          	/* reuse RAND generated for the subsequent function calls*/
+    166          	for (i=0;i<L_RAND/2;i++)
+   \                     ??CrossCallReturnLabel_10:
+   \   00000036   ....               RCALL   ?Subroutine21
+    167          		RAND[i] = buff1[i];
+   \                     ??CrossCallReturnLabel_47:
+   \   00000038   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_16:
+   \   0000003A   A106               LDD     R16, Z+38
+   \   0000003C   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_17:
+   \   0000003E   8302               STD     Z+2, R16
+   \   00000040   ....               RCALL   ?Subroutine5
+   \                     ??CrossCallReturnLabel_5:
+   \   00000042   F3D4               BRLT    ??CrossCallReturnLabel_47
+    168          	for (i=0;i<L_RAND/2;i++)
+   \   00000044   ....               RCALL   ?Subroutine21
+    169          		RAND[i+L_RAND/2] = buff2[i];
+   \                     ??CrossCallReturnLabel_48:
+   \   00000046   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_18:
+   \   00000048   A506               LDD     R16, Z+46
+   \   0000004A   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_19:
+   \   0000004C   8702               STD     Z+10, R16
+   \   0000004E   ....               RCALL   ?Subroutine5
+   \                     ??CrossCallReturnLabel_6:
+   \   00000050   F3D4               BRLT    ??CrossCallReturnLabel_48
+    170          
+    171          	AMF[0]=0x00;
+   \   00000052   8308               ST      Y, R16
+    172          	AMF[1]=0x01;
+   \   00000054   E001               LDI     R16, 1
+   \   00000056   8309               STD     Y+1, R16
+    173          
+    174          	dbg_printf("\n");
+    175          	dbg_printf("\n");
+    176          	dbg_printf("test vector for f1:\n");
+    177          	dbg_printf("input section\n");
+    178          	dbg_printf("K is:		");
+    179          	for(i=0;i<L_KEY;i++)
+    180          		dbg_printf("%02x ",K[i]);
+    181          	dbg_printf("\n");
+    182          	dbg_printf("fi1 is:		%02x\n",fi1);
+    183          	dbg_printf("RAND is:	");
+    184          	for(i=0;i<L_RAND;i++)
+    185          		dbg_printf("%02x ",RAND[i]);
+    186          	dbg_printf("\n");
+    187          	dbg_printf("Fmk is:		");
+    188          	for(i=0;i<L_FMK;i++)
+    189          		dbg_printf("%02x ",Fmk[i]);
+    190          	dbg_printf("\n");
+    191          	dbg_printf("SQN is:		");
+    192          	for(i=0;i<L_SQN;i++)
+    193          		dbg_printf("%02x ",SQN[i]);
+    194          	dbg_printf("\n");
+    195          	dbg_printf("AMF is:		%02x %02x\n",AMF[0],AMF[1]);
+    196          
+    197          	f1(K,fi1,RAND,Fmk,SQN,AMF,MACA);
+   \   00000058   018E               MOVW    R17:R16, R29:R28
+   \   0000005A   5E02               SUBI    R16, 226
+   \   0000005C   ....               RCALL   ?Subroutine2
+   \                     ??CrossCallReturnLabel_85:
+   \   0000005E   ....               RCALL   ?Subroutine13
+    198          	dbg_printf("\n");
+    199          	dbg_printf("output section\n");
+    200          	dbg_printf("f1 	MACA:	");
+    201          	for (i=0;i<L_MACA;i++)
+    202          		dbg_printf("%02x ",MACA[i]);
+    203          	dbg_printf("\n");
+    204          
+    205          	pause();
+    206          
+    207          	dbg_printf("\n");
+    208          	dbg_printf("\n");
+    209          	dbg_printf("test vector for f5\n");
+    210          	dbg_printf("input section\n");
+    211          	dbg_printf("K is:		");
+    212          	for(i=0;i<L_KEY;i++)
+    213          		dbg_printf("%02x ",K[i]);
+    214          	dbg_printf("\n");
+    215          	dbg_printf("fi5 is:		%02x\n",fi5);
+    216          	dbg_printf("RAND is:	");
+    217          	for(i=0;i<L_RAND;i++)
+    218          		dbg_printf("%02x ",RAND[i]);
+    219          	dbg_printf("\n");
+    220          	dbg_printf("Fmk is:		");
+    221          	for(i=0;i<L_FMK;i++)
+    222          		dbg_printf("%02x ",Fmk[i]);
+    223          	dbg_printf("\n");
+    224          	dbg_printf("\n");
+    225          	f5(K,fi5,RAND,Fmk,AK);
+   \                     ??CrossCallReturnLabel_28:
+   \   00000060   018E               MOVW    R17:R16, R29:R28
+   \   00000062   5E08               SUBI    R16, 232
+   \   00000064   ....               RCALL   ?Subroutine0
+   \                     ??CrossCallReturnLabel_81:
+   \   00000066   ....               RCALL   ?Subroutine12
+    226          	dbg_printf("output section\n");
+    227          	dbg_printf("f5 	AK:	");
+    228          	for (i=0;i<L_AK;i++)
+    229          		dbg_printf("%02x ",AK[i]);
+    230          	dbg_printf("\n");
+    231                  RAND_AUTN[0] = 16;
+   \                     ??CrossCallReturnLabel_26:
+   \   00000068   E100               LDI     R16, 16
+   \   0000006A   AB0E               STD     Y+54, R16
+    232                  for(i=0; i<16; i++)
+   \   0000006C   ....               RCALL   ?Subroutine21
+    233                    RAND_AUTN[1+i] = RAND[i];
+   \                     ??CrossCallReturnLabel_49:
+   \   0000006E   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_20:
+   \   00000070   8102               LDD     R16, Z+2
+   \   00000072   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_21:
+   \   00000074   AB07               STD     Z+55, R16
+   \   00000076   9601               ADIW    R25:R24, 1
+   \   00000078   3180               CPI     R24, 16
+   \   0000007A   ....               RCALL   ??Subroutine5_0
+   \                     ??CrossCallReturnLabel_8:
+   \   0000007C   F3C4               BRLT    ??CrossCallReturnLabel_49
+    234                  RAND_AUTN[17] = 16;
+   \   0000007E   E100               LDI     R16, 16
+   \   00000080   01FE               MOVW    R31:R30, R29:R28
+   \   00000082   96FF               ADIW    R31:R30, 63
+   \   00000084   8700               STD     Z+8, R16
+    235                  for(i=0; i<6; i++)
+   \   00000086   ....               RCALL   ?Subroutine21
+    236                    RAND_AUTN[18+i] = SQN[i] ^ AK[i];
+   \                     ??CrossCallReturnLabel_50:
+   \   00000088   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_22:
+   \   0000008A   8902               LDD     R16, Z+18
+   \   0000008C   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_23:
+   \   0000008E   8D10               LDD     R17, Z+24
+   \   00000090   2710               EOR     R17, R16
+   \   00000092   01FE               MOVW    R31:R30, R29:R28
+   \   00000094   5BE8               SUBI    R30, 184
+   \   00000096   4FFF               SBCI    R31, 255
+   \   00000098   0FE8               ADD     R30, R24
+   \   0000009A   1FF9               ADC     R31, R25
+   \   0000009C   8310               ST      Z, R17
+   \   0000009E   9601               ADIW    R25:R24, 1
+   \   000000A0   3086               CPI     R24, 6
+   \   000000A2   ....               RCALL   ??Subroutine5_0
+   \                     ??CrossCallReturnLabel_9:
+   \   000000A4   F38C               BRLT    ??CrossCallReturnLabel_50
+    237                  RAND_AUTN[24] = AMF[0];
+   \   000000A6   8108               LD      R16, Y
+   \   000000A8   01FE               MOVW    R31:R30, R29:R28
+   \   000000AA   96FF               ADIW    R31:R30, 63
+   \   000000AC   8707               STD     Z+15, R16
+    238                  RAND_AUTN[25] = AMF[1];
+   \   000000AE   8109               LDD     R16, Y+1
+   \   000000B0   01FE               MOVW    R31:R30, R29:R28
+   \   000000B2   96FF               ADIW    R31:R30, 63
+   \   000000B4   8B00               STD     Z+16, R16
+    239                  for(i=0; i<8; i++)
+   \   000000B6   ....               RCALL   ?Subroutine21
+    240                    RAND_AUTN[26+i] = MACA[i];
+   \                     ??CrossCallReturnLabel_51:
+   \   000000B8   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_24:
+   \   000000BA   8D06               LDD     R16, Z+30
+   \   000000BC   01FE               MOVW    R31:R30, R29:R28
+   \   000000BE   5BE0               SUBI    R30, 176
+   \   000000C0   4FFF               SBCI    R31, 255
+   \   000000C2   0FE8               ADD     R30, R24
+   \   000000C4   1FF9               ADC     R31, R25
+   \   000000C6   8300               ST      Z, R16
+   \   000000C8   ....               RCALL   ?Subroutine5
+   \                     ??CrossCallReturnLabel_7:
+   \   000000CA   F3B4               BRLT    ??CrossCallReturnLabel_51
+    241                  run_aka(RAND_AUTN,34,RAND_AUTN);
+   \   000000CC   01AE               MOVW    R21:R20, R29:R28
+   \   000000CE   5C4A               SUBI    R20, 202
+   \   000000D0   4F5F               SBCI    R21, 255
+   \   000000D2   E222               LDI     R18, 34
+   \   000000D4   018E               MOVW    R17:R16, R29:R28
+   \   000000D6   5C0A               SUBI    R16, 202
+   \   000000D8   4F1F               SBCI    R17, 255
+   \   000000DA   ....               RCALL   run_aka
+    242          
+    243          	pause();
+    244          	dbg_printf("\n");
+    245          	dbg_printf("\n");
+    246          	dbg_printf("test vector for f1*:\n");
+    247          	dbg_printf("input section\n");
+    248          	dbg_printf("K is:		");
+    249          	for(i=0;i<L_KEY;i++)
+    250          		dbg_printf("%02x ",K[i]);
+    251          	dbg_printf("\n");
+    252          	dbg_printf("fi1star is:	%02x\n",fi1star);
+    253          	dbg_printf("RAND is:	");
+    254          	for(i=0;i<L_RAND;i++)
+    255          		dbg_printf("%02x ",RAND[i]);
+    256          	dbg_printf("\n");
+    257          	dbg_printf("Fmk is:		");
+    258          	for(i=0;i<L_FMK;i++)
+    259          		dbg_printf("%02x ",Fmk[i]);
+    260          	dbg_printf("\n");
+    261          	dbg_printf("SQN is:		");
+    262          	for(i=0;i<L_SQN;i++)
+    263          		dbg_printf("%02x ",SQN[i]);
+    264          	dbg_printf("\n");
+    265          	dbg_printf("AMF is:		%02x %02x\n",AMF[0],AMF[1]);
+    266          
+    267          	dbg_printf("\n");
+    268          	f1star(K,fi1star,RAND,Fmk,SQN,AMF,MACS);
+   \   000000DC   018E               MOVW    R17:R16, R29:R28
+   \   000000DE   5A08               SUBI    R16, 168
+   \   000000E0   ....               RCALL   ?Subroutine2
+   \                     ??CrossCallReturnLabel_86:
+   \   000000E2   8122               LDD     R18, Z+2
+   \   000000E4   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_59:
+   \   000000E6   ....               RCALL   f1star
+    269          	dbg_printf("output section\n");
+    270          	dbg_printf("f1* 	MACS:	");
+    271          	for(i=0;i<L_MACS;i++)
+    272          		dbg_printf("%02x ",MACS[i]);
+    273          	for(i=0;i<L_SQN;i++)
+   \   000000E8   ....               RCALL   ?Subroutine21
+    274          		SQN[i]=0x00;
+   \                     ??CrossCallReturnLabel_52:
+   \   000000EA   E000               LDI     R16, 0
+   \   000000EC   ....               RCALL   ?Subroutine10
+   \                     ??CrossCallReturnLabel_25:
+   \   000000EE   8B02               STD     Z+18, R16
+   \   000000F0   9601               ADIW    R25:R24, 1
+   \   000000F2   3086               CPI     R24, 6
+   \   000000F4   0790               CPC     R25, R16
+   \   000000F6   F3CC               BRLT    ??CrossCallReturnLabel_52
+    275          	AMF[0]=AMF[1]=0;
+   \   000000F8   8309               STD     Y+1, R16
+   \   000000FA   8308               ST      Y, R16
+    276          	dbg_printf("\n");
+    277          
+    278          	pause();
+    279          
+    280          	dbg_printf("\n");
+    281          	dbg_printf("\n");
+    282          	dbg_printf("test vector for f2:\n");
+    283          	dbg_printf("input section\n");
+    284          	dbg_printf("K is:		");
+    285          	for(i=0;i<L_KEY;i++)
+    286          		dbg_printf("%02x ",K[i]);
+    287          	dbg_printf("\n");
+    288          	dbg_printf("fi2 is:		%02x\n",fi2);
+    289          	dbg_printf("RAND is:	");
+    290          	for(i=0;i<L_RAND;i++)
+    291          		dbg_printf("%02x ",RAND[i]);
+    292          	dbg_printf("\n");
+    293          	dbg_printf("Fmk is:		");
+    294          	for(i=0;i<L_FMK;i++)
+    295          		dbg_printf("%02x ",Fmk[i]);
+    296          	dbg_printf("\n");
+    297          	dbg_printf("\n");
+    298          	f2(K,fi2,RAND,Fmk,RES,L_RES);
+   \   000000FC   E100               LDI     R16, 16
+   \   000000FE   ....               RCALL   ?Subroutine26
+   \                     ??CrossCallReturnLabel_67:
+   \   00000100   018E               MOVW    R17:R16, R29:R28
+   \   00000102   5608               SUBI    R16, 104
+   \   00000104   ....               RCALL   ?Subroutine22
+   \                     ??CrossCallReturnLabel_53:
+   \   00000106   5F4A               SUBI    R20, 250
+   \   00000108   4F5F               SBCI    R21, 255
+   \   0000010A   01FD               MOVW    R31:R30, R27:R26
+   \   0000010C   ....               RCALL   ?Subroutine14
+    299          	dbg_printf("output section\n");
+    300          	dbg_printf("f2 	RES:	");
+    301          	for (i=0;i<L_RES;i++)
+    302          		dbg_printf("%02x ",RES[i]);
+    303          	dbg_printf("\n");
+    304          
+    305          	pause();
+    306          
+    307          	dbg_printf("\n");
+    308          	dbg_printf("\n");
+    309          	dbg_printf("test vector for f3:\n");
+    310          	dbg_printf("input section\n");
+    311          	dbg_printf("K is:		");
+    312          	for(i=0;i<L_KEY;i++)
+    313          		dbg_printf("%02x ",K[i]);
+    314          	dbg_printf("\n");
+    315          	dbg_printf("fi3 is:		%02x\n",fi3);
+    316          	dbg_printf("RAND is:	");
+    317          	for(i=0;i<L_RAND;i++)
+    318          		dbg_printf("%02x ",RAND[i]);
+    319          	dbg_printf("\n");
+    320          	dbg_printf("Fmk is:		");
+    321          	for(i=0;i<L_FMK;i++)
+    322          		dbg_printf("%02x ",Fmk[i]);
+    323          	dbg_printf("\n");
+    324          
+    325          	dbg_printf("\n");
+    326          	f3(K,fi3,RAND,Fmk,CK);
+   \                     ??CrossCallReturnLabel_30:
+   \   0000010E   018E               MOVW    R17:R16, R29:R28
+   \   00000110   590A               SUBI    R16, 154
+   \   00000112   ....               RCALL   ?Subroutine0
+   \                     ??CrossCallReturnLabel_82:
+   \   00000114   ....               RCALL   ?Subroutine15
+    327          	dbg_printf("output section\n");
+    328          	dbg_printf("f3 	CK:	");
+    329          	for (i=0;i<L_CK;i++)
+    330          		dbg_printf("%02x ",CK[i]);
+    331          	dbg_printf("\n");
+    332          
+    333          	pause();
+    334          
+    335          	dbg_printf("\n");
+    336          	dbg_printf("\n");
+    337          	dbg_printf("test vector for f4:\n");
+    338          	dbg_printf("input section\n");
+    339          	dbg_printf("K is:		");
+    340          	for(i=0;i<L_KEY;i++)
+    341          		dbg_printf("%02x ",K[i]);
+    342          	dbg_printf("\n");
+    343          	dbg_printf("fi4 is:		%02x\n",fi4);
+    344          	dbg_printf("RAND is:	");
+    345          	for(i=0;i<L_RAND;i++)
+    346          		dbg_printf("%02x ",RAND[i]);
+    347          	dbg_printf("\n");
+    348          	dbg_printf("Fmk is:		");
+    349          	for(i=0;i<L_FMK;i++)
+    350          		dbg_printf("%02x ",Fmk[i]);
+    351          	dbg_printf("\n");
+    352          
+    353          	dbg_printf("\n");
+    354          	f4(K,fi4,RAND,Fmk,IK);
+   \                     ??CrossCallReturnLabel_32:
+   \   00000116   018E               MOVW    R17:R16, R29:R28
+   \   00000118   580A               SUBI    R16, 138
+   \   0000011A   ....               RCALL   ?Subroutine0
+   \                     ??CrossCallReturnLabel_83:
+   \   0000011C   8125               LDD     R18, Z+5
+   \   0000011E   ....               RCALL   ?Subroutine24
+   \                     ??CrossCallReturnLabel_60:
+   \   00000120   ....               RCALL   f4
+    355          	dbg_printf("output section\n");
+    356          	dbg_printf("f4 	IK:	");
+    357          	for (i=0;i<L_IK;i++)
+    358          		dbg_printf("%02x ",IK[i]);
+    359          	dbg_printf("\n");
+    360          
+    361          	pause();
+    362          
+    363          	dbg_printf("\n");
+    364          	dbg_printf("\n");
+    365          	dbg_printf("test vector for f5*\n");
+    366          	dbg_printf("input section\n");
+    367          	dbg_printf("K is:		");
+    368          	for(i=0;i<L_KEY;i++)
+    369          		dbg_printf("%02x ",K[i]);
+    370          	dbg_printf("\n");
+    371          	dbg_printf("fi5* is:	%02x\n",fi5star);
+    372          	dbg_printf("RAND is:	");
+    373          	for(i=0;i<L_RAND;i++)
+    374          		dbg_printf("%02x ",RAND[i]);
+    375          	dbg_printf("\n");
+    376          	dbg_printf("Fmk is:		");
+    377          	for(i=0;i<L_FMK;i++)
+    378          		dbg_printf("%02x ",Fmk[i]);
+    379          	dbg_printf("\n");
+    380          	dbg_printf("\n");
+    381          	f5star(K,fi5star,RAND,Fmk,AKS);
+   \   00000122   018E               MOVW    R17:R16, R29:R28
+   \   00000124   5A00               SUBI    R16, 160
+   \   00000126   ....               RCALL   ?Subroutine0
+   \                     ??CrossCallReturnLabel_84:
+   \   00000128   ....               RCALL   ?Subroutine16
+    382          	dbg_printf("output section\n");
+    383          	dbg_printf("f5* 	AKS:	");
+    384          	for (i=0;i<L_AKS;i++)
+    385          		dbg_printf("%02x ",AKS[i]);
+    386          	dbg_printf("\n");
+    387          
+    388          	pause();
+    389                  dbg_printf("\n");
+    390                  dbg_printf("\n");
+    391                  dbg_printf("test vector for f11\n");
+    392                  dbg_printf("input section\n");
+    393                  dbg_printf("K is: ");
+    394                  for(i=0;i<L_KEY;i++)
+    395                    dbg_printf("%02x ",K[i]);
+    396                  dbg_printf("\n");
+    397                  dbg_printf("fi11 is: %02x\n",fi11);
+    398                  dbg_printf("RAND is: ");
+    399                  for(i=0;i<L_RAND;i++)
+    400                    dbg_printf("%02x ",RAND[i]);
+    401                  dbg_printf("\n");
+    402                  dbg_printf("Fmk is: ");
+    403                  for(i=0;i<L_FMK;i++)
+    404                    dbg_printf("%02x ",Fmk[i]);
+    405                  dbg_printf("\n");
+    406                  dbg_printf("\n");
+    407                  f11(K,fi11,RAND,Fmk,UAK);
+   \                     ??CrossCallReturnLabel_34:
+   \   0000012A   018E               MOVW    R17:R16, R29:R28
+   \   0000012C   570A               SUBI    R16, 122
+   \   0000012E   ....               RCALL   ?Subroutine22
+   \                     ??CrossCallReturnLabel_54:
+   \   00000130   5F4C               SUBI    R20, 252
+   \   00000132   4F5F               SBCI    R21, 255
+   \   00000134   E520               LDI     R18, 80
+   \   00000136   9618               ADIW    R27:R26, 8
+   \   00000138   018D               MOVW    R17:R16, R27:R26
+   \   0000013A   ....               RCALL   f11
+    408                  dbg_printf("output section\n");
+    409                  dbg_printf("f11 UAK: ");
+    410                  for (i=0;i<L_UAK;i++)
+    411                    dbg_printf("%02x ",UAK[i]);
+    412                  dbg_printf("\n");
+    413                  pause();
+    414          }
+   \   0000013C   96EF               ADIW    R29:R28, 63
+   \   0000013E   96EF               ADIW    R29:R28, 63
+   \   00000140   96E8               ADIW    R29:R28, 56
+   \   00000142   E0E4               LDI     R30, 4
+   \   00000144   ....               RJMP    ?EPILOGUE_B4_L09
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine21:
+   \   00000000   E080               LDI     R24, 0
+   \   00000002   E090               LDI     R25, 0
+   \   00000004   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine10:
+   \   00000000   01FE               MOVW    R31:R30, R29:R28
+   \   00000002   0FE8               ADD     R30, R24
+   \   00000004   1FF9               ADC     R31, R25
+   \   00000006   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine6:
+   \   00000000   4F7F               SBCI    R23, 255
+   \   00000002   01AD               MOVW    R21:R20, R27:R26
+   \   00000004   5E48               SUBI    R20, 232
+   \   00000006   4F5F               SBCI    R21, 255
+   \   00000008   912C               LD      R18, X
+   \   0000000A   018E               MOVW    R17:R16, R29:R28
+   \   0000000C   550A               SUBI    R16, 90
+   \   0000000E   4F1F               SBCI    R17, 255
+   \   00000010   ....               RJMP    f0
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine5:
+   \   00000000   9601               ADIW    R25:R24, 1
+   \   00000002   3088               CPI     R24, 8
+   \                     ??Subroutine5_0:
+   \   00000004   E000               LDI     R16, 0
+   \   00000006   0790               CPC     R25, R16
+   \   00000008   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine22:
+   \   00000000   4F1F               SBCI    R17, 255
+   \   00000002   931A               ST      -Y, R17
+   \   00000004   930A               ST      -Y, R16
+   \   00000006   01BD               MOVW    R23:R22, R27:R26
+   \   00000008   5E68               SUBI    R22, 232
+   \   0000000A   4F7F               SBCI    R23, 255
+   \   0000000C   01AE               MOVW    R21:R20, R29:R28
+   \   0000000E   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine2:
+   \   00000000   ....               RCALL   ?Subroutine23
+   \                     ??CrossCallReturnLabel_57:
+   \   00000002   5F0E               SUBI    R16, 254
+   \   00000004   ....               RCALL   ?Subroutine23
+   \                     ??CrossCallReturnLabel_58:
+   \   00000006   5E0A               SUBI    R16, 234
+   \   00000008   ....               RCALL   ?Subroutine22
+   \                     ??CrossCallReturnLabel_56:
+   \   0000000A   5F48               SUBI    R20, 248
+   \   0000000C                      REQUIRE ?Subroutine29
+   \   0000000C                      ;               // Fall through to label ?Subroutine29
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine23:
+   \   00000000   4F1F               SBCI    R17, 255
+   \   00000002   931A               ST      -Y, R17
+   \   00000004   930A               ST      -Y, R16
+   \   00000006   018E               MOVW    R17:R16, R29:R28
+   \   00000008   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   00000000   ....               RCALL   ?Subroutine22
+   \                     ??CrossCallReturnLabel_55:
+   \   00000002   5F4C               SUBI    R20, 252
+   \   00000004   ....               RJMP    ?Subroutine29
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for <Constant "abcdbcdecdefdefge`:
+   \   00000000   626164636362       DB 61H, 62H, 63H, 64H, 62H, 63H, 64H, 65H
+   \              6564        
+   \   00000008   646366656564       DB 63H, 64H, 65H, 66H, 64H, 65H, 66H, 67H
+   \              6766        
+   \   00000010   666568676766       DB 65H, 66H, 67H, 68H, 66H, 67H, 68H, 69H
+   \              6968        
+   \   00000018   68676A696968       DB 67H, 68H, 69H, 6AH, 68H, 69H, 6AH, 6BH
+   \              6B6A        
+   \   00000020   6A696C6B6B6A       DB 69H, 6AH, 6BH, 6CH, 6AH, 6BH, 6CH, 6DH
+   \              6D6C        
+   \   00000028   6C6B6E6D6D6C       DB 6BH, 6CH, 6DH, 6EH, 6CH, 6DH, 6EH, 6FH
+   \              6F6E        
+   \   00000030   6E6D706F6F6E       DB 6DH, 6EH, 6FH, 70H, 6EH, 6FH, 70H, 71H
+   \              7170        
+   \   00000038   00                 DB 0
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for fi0>`:
+   \   00000000   41                 DB 65
+   \                     `?<Initializer for fi1>`:
+   \   00000001   42                 DB 66
+   \                     `?<Initializer for fi1star>`:
+   \   00000002   43                 DB 67
+   \                     `?<Initializer for fi2>`:
+   \   00000003   44                 DB 68
+   \                     `?<Initializer for fi3>`:
+   \   00000004   45                 DB 69
+   \                     `?<Initializer for fi4>`:
+   \   00000005   46                 DB 70
+   \                     `?<Initializer for fi5>`:
+   \   00000006   47                 DB 71
+   \                     `?<Initializer for fi5star>`:
+   \   00000007   48                 DB 72
+   \                     `?<Initializer for K>`:
+   \   00000008   1BAD155AE89B       DB 173, 27, 90, 21, 155, 232, 107, 44, 166, 108, 122, 228, 11, 186, 155
+   \              2C6B6CA6E47A
+   \              BA0B9B      
+   \   00000017   9D                 DB 157
+   \                     `?<Initializer for Fmk>`:
+   \   00000018   48414741           DB 65, 72, 65, 71
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for msg_data>`:
+   \   00000000   ....               DW `?<Constant "abcdbcdecdefdefgefghf...">`
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_I>`
+   \                     `?<Constant "abcdbcdecdefdefgefghf...">`:
+   \   00000000                      DS 57
+   \   00000039                      REQUIRE `?<Initializer for <Constant "abcdbcdecdefdefge`
+
+   \                                 In segment NEAR_F, align 1, keep-with-next
+   \                     `?<Constant {(uchar)'\\260', (uchar)'\\253', (uch`:
+   \   00000000   ABB09DB9C66A       DB 176, 171, 185, 157, 106, 198, 167, 78, 185, 142, 182, 194, 218, 177
+   \              4EA78EB9C2B6
+   \              B1DA        
+   \   0000000E   51A5               DB 165, 81
+   \   00000010   000000000100       DB 0, 0, 0, 0, 0, 1
+
+   \                                 In segment ABSOLUTE, at 0x25
+   \   union <unnamed> volatile __io _A_PORTB
+   \                     _A_PORTB:
+   \   00000000                      DS 1
+
+   Maximum stack usage in bytes:
+
+     Function     CSTACK RSTACK
+     --------     ------ ------
+     pause            0      2
+     run_aka         38      4
+       -> f5         34      2
+       -> f1         38      2
+       -> memcmp     32      2
+       -> f2         36      2
+       -> f3         34      2
+       -> f4         34      2
+       -> f5star     34      2
+       -> f1star     38      2
+     test_aka       192      4
+       -> f0        186      2
+       -> f0        186      2
+       -> f1        192      2
+       -> f5        188      2
+       -> run_aka   186      2
+       -> f1star    192      2
+       -> f2        190      2
+       -> f3        188      2
+       -> f4        188      2
+       -> f5star    188      2
+       -> f11       188      2
+     test_eeprom      0      4
+
+
+   Segment part sizes:
+
+     Function/Label                 Bytes
+     --------------                 -----
+     SQNms                             6
+     fi0                              28
+     ee_var                            1
+     test_eeprom                      10
+     run_aka                         314
+     ?Subroutine26                     8
+     ?Subroutine20                     6
+     ?Subroutine27                    10
+     ?Subroutine18                    10
+     ?Subroutine17                     6
+     ?Subroutine28                     8
+     ?Subroutine9                      6
+     ?Subroutine8                     14
+     ?Subroutine7                      6
+     ?Subroutine4                     12
+     ?Subroutine1                     20
+     ?Subroutine25                    10
+     ?Subroutine16                     6
+     ?Subroutine15                     6
+     ?Subroutine14                     6
+     ?Subroutine24                     8
+     ?Subroutine13                     6
+     ?Subroutine12                     6
+     ?Subroutine29                     6
+     msg_data                          2
+     pause                             2
+     test_aka                        326
+     ?Subroutine21                     6
+     ?Subroutine10                     8
+     ?Subroutine6                     18
+     ?Subroutine5                     10
+     ?Subroutine22                    16
+     ?Subroutine2                     12
+     ?Subroutine23                    10
+     ?Subroutine0                      6
+     ?<Initializer for <Constant "abcdbcdecdefdefge
+                                      57
+     ?<Initializer for fi0>           28
+     ?<Initializer for msg_data>       2
+     ?<Constant "abcdbcdecdefdefgefghf...">
+                                      57
+     ?<Constant {(uchar)'\260', (uchar)'\253', (uch
+                                      22
+     _A_PORTB                          1
+      Others                           6
+
+ 
+   1 byte  in segment ABSOLUTE
+ 898 bytes in segment CODE
+   7 bytes in segment EEPROM_I
+   6 bytes in segment INITTAB
+  22 bytes in segment NEAR_F
+  87 bytes in segment NEAR_I
+  87 bytes in segment NEAR_ID
+ 
+ 1 007 bytes of CODE  memory (+ 6 bytes shared)
+    87 bytes of DATA  memory (+ 1 byte  shared)
+     7 bytes of XDATA memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,349 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+//                                                     30/Oct/2005  13:40:06 /
+// IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version               /
+// Copyright 1996-2005 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\iccd\iccd.c      /
+//    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11 /
+//                    \Release\Obj\ -D NDEBUG -lCN                           /
+//                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\    /
+//                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List /
+//                    \ --initializers_in_flash -z9 --cross_call_passes=2    /
+//                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR   /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\" -I "E:\Program Files\IAR             /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\CLIB\" --eeprom_size 512               /
+//                    E:\yanglq\projects\agsm\firmware_ed11\iccd\iccd.c      /
+//    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\icc /
+//                    d.s90                                                  /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME iccd
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?EPILOGUE_B4_L09
+        EXTERN ?PROLOGUE4_L09
+
+        PUBWEAK _A_PINB
+        PUBWEAK _A_PORTB
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC iccd_XfrBlockRead
+        PUBLIC iccd_process
+
+        EXTERN memcpy
+        EXTERN run_aka
+        EXTERN USBwriteLen
+        EXTERN USBwrittenLen
+        EXTERN ccid_buf
+        EXTERN lastRequest
+
+// E:\yanglq\projects\agsm\firmware_ed11\iccd\iccd.c
+//    1 #include <string.h>
+//    2 #include <inavr.h>
+//    3 #include <ioavr.h>
+//    4 #include "../scr/ccid.h"
+//    5 #include "../3gpp-aka/aka.h"
+//    6 
+//    7 extern USB_CCID_BUF ccid_buf;
+//    8 extern int    USBwriteLen;
+//    9 extern int    USBwrittenLen;
+//   10 extern uchar  lastRequest;
+//   11 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   12 int iccd_XfrBlockRead()
+iccd_XfrBlockRead:
+//   13 {
+        RCALL	?PROLOGUE4_L09
+//   14   int ret = 2;
+        LDI	R16, 2
+        LDI	R17, 0
+//   15   uchar *apdu = ccid_buf.Request.Data;
+//   16 
+//   17   if(apdu[1] == 0x88 && apdu[3] == 0x81)
+        LDI	R26, LOW(ccid_buf)
+        LDI	R27, (ccid_buf) >> 8
+        ADIW	R27:R26, 9
+        LD	R18, X
+        SBIW	R27:R26, 9
+        CPI	R18, 136
+        BRNE	??iccd_XfrBlockRead_0
+        ADIW	R27:R26, 11
+        LD	R18, X
+        SBIW	R27:R26, 11
+        CPI	R18, 129
+        BRNE	??iccd_XfrBlockRead_0
+//   18   {
+//   19     //3GPP-AKA
+//   20     if(apdu[4] == 0x22)
+        ADIW	R27:R26, 12
+        LD	R18, X
+        SBIW	R27:R26, 12
+        CPI	R18, 34
+        BRNE	??iccd_XfrBlockRead_1
+//   21     {
+//   22       memcpy(apdu+200,apdu+5,0x22);
+        LDI	R20, 34
+        LDI	R21, 0
+        MOVW	R19:R18, R27:R26
+        SUBI	R18, 243
+        SBCI	R19, 255
+        MOVW	R17:R16, R27:R26
+        SUBI	R16, 48
+        SBCI	R17, 255
+        RCALL	memcpy
+//   23       ret = run_aka(apdu+200,0x22,apdu);
+        MOVW	R21:R20, R27:R26
+        SUBI	R20, 248
+        SBCI	R21, 255
+        LDI	R18, 34
+        MOVW	R17:R16, R27:R26
+        SUBI	R16, 48
+        SBCI	R17, 255
+        RCALL	run_aka
+        LDI	R17, 0
+        RJMP	??iccd_XfrBlockRead_2
+//   24     }else{
+//   25       apdu[0] = 0x6c;//wrong length -  %d expected
+??iccd_XfrBlockRead_1:
+        LDI	R18, 108
+        ADIW	R27:R26, 8
+        ST	X+, R18
+//   26       apdu[1] = 0x22;
+        LDI	R18, 34
+        ST	X, R18
+        RJMP	??iccd_XfrBlockRead_3
+//   27     }
+//   28   }else{
+//   29     apdu[0] = 0x6d;//INS code not supported or invalid
+??iccd_XfrBlockRead_0:
+        LDI	R18, 109
+        ADIW	R27:R26, 8
+        ST	X+, R18
+//   30     apdu[1] = 0x00;
+        ST	X, R17
+??iccd_XfrBlockRead_3:
+        SBIW	R27:R26, 9
+//   31   }
+//   32   ccid_buf.Response.ResponseHeader.wLength = ret;
+??iccd_XfrBlockRead_2:
+        ADIW	R27:R26, 6
+        ST	X+, R16
+        ST	X, R17
+        SBIW	R27:R26, 3
+//   33   ccid_buf.Response.ResponseHeader.bError = 0;
+        LDI	R18, 0
+        ST	X, R18
+//   34   ccid_buf.Response.ResponseHeader.bStatus = 0;
+        ST	-X, R18
+//   35   return ret+8;
+        SUBI	R16, 248
+        SBCI	R17, 255
+        REQUIRE ?Subroutine0
+        ;		// Fall through to label ?Subroutine0
+//   36 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+        LDI	R30, 4
+        RJMP	?EPILOGUE_B4_L09
+//   37 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   38 int iccd_process(PUSB_CCID_REQUEST pCCIDRequest)
+iccd_process:
+//   39 {
+        RCALL	?PROLOGUE4_L09
+        MOVW	R27:R26, R17:R16
+//   40   int len = 0;
+        LDI	R16, 0
+        LDI	R17, 0
+//   41   int wLength = pCCIDRequest->RequestHeader.wLength;
+        MOVW	R31:R30, R27:R26
+        LDD	R24, Z+6
+        LDD	R25, Z+7
+//   42   uchar bRequestType = pCCIDRequest->RequestHeader.bMessageType;
+        LDD	R18, Z+1
+//   43 
+//   44   /* reset global error code */
+//   45   ccid_buf.Response.ResponseHeader.bMessageType = bRequestType;
+        LDI	R30, LOW(ccid_buf)
+        LDI	R31, (ccid_buf) >> 8
+        STD	Z+1, R18
+//   46   ccid_buf.Response.ResponseHeader.bSeq = pCCIDRequest->RequestHeader.bSeq;
+        ADIW	R27:R26, 2
+        LD	R19, X
+        STD	Z+2, R19
+//   47 
+//   48   if(bRequestType == PC_to_RDR_IccPowerOn)
+        CPI	R18, 98
+        BRNE	??iccd_process_0
+//   49   {
+//   50     ccid_buf.Response.Data[0] = 0x3b;
+        LDI	R16, 59
+        STD	Z+8, R16
+//   51     ccid_buf.Response.Data[0] = 0x02;
+        LDI	R16, 2
+        STD	Z+8, R16
+//   52     ccid_buf.Response.Data[0] = 0x0a;
+        LDI	R16, 10
+        STD	Z+8, R16
+//   53     ccid_buf.Response.Data[0] = 0x9e;
+        LDI	R16, 158
+        STD	Z+8, R16
+//   54     ccid_buf.Response.ResponseHeader.wLength = 4+8;/* in order to compatible with asm version only */
+        LDI	R16, 12
+        STD	Z+6, R16
+        STD	Z+7, R17
+//   55     ccid_buf.Response.ResponseHeader.bError = 0;
+        STD	Z+4, R17
+//   56     ccid_buf.Response.ResponseHeader.bStatus = 0;
+        STD	Z+3, R17
+//   57     LED_ON;
+        SBI	0x05, 0x05
+//   58     return 12;
+        RJMP	??iccd_process_1
+//   59   }else if(bRequestType == PC_to_RDR_IccPowerOff)
+??iccd_process_0:
+        CPI	R18, 99
+        BRNE	??iccd_process_2
+//   60   {
+//   61     LED_OFF;
+        CBI	0x05, 0x05
+//   62     len = 8;
+        LDI	R16, 8
+        RJMP	??iccd_process_3
+//   63   }else if(bRequestType == PC_to_RDR_XfrBlock)
+??iccd_process_2:
+        CPI	R18, 111
+        BRNE	??iccd_process_4
+//   64   {
+//   65     USBwriteLen = wLength;
+        LDI	R26, LOW(USBwriteLen)
+        LDI	R27, (USBwriteLen) >> 8
+        ST	X+, R24
+        ST	X, R25
+//   66     ccid_buf.Request.RequestHeader.wLength = wLength;
+        STD	Z+6, R24
+        STD	Z+7, R25
+//   67     USBwrittenLen = 0;
+        LDI	R30, LOW(USBwrittenLen)
+        LDI	R31, (USBwrittenLen) >> 8
+        ST	Z, R16
+        STD	Z+1, R16
+//   68     lastRequest = PC_to_RDR_XfrBlock;
+        LDI	R16, 111
+        STS	lastRequest, R16
+//   69     len = -1;
+//   70   }else if(bRequestType == PC_to_RDR_XfrBlockRead)
+//   71   {
+//   72     if((lastRequest == PC_to_RDR_XfrBlock) && (USBwriteLen == USBwrittenLen))
+//   73     {
+//   74       LED_TOGGLE;
+//   75       len = iccd_XfrBlockRead();
+//   76       lastRequest = PC_to_RDR_XfrBlockRead;
+//   77     }else if(lastRequest == PC_to_RDR_XfrBlockRead)
+//   78     {
+//   79       len = ccid_buf.Request.RequestHeader.wLength+8;
+//   80     }
+//   81   }else{
+//   82     len = -1;
+??iccd_process_5:
+        LDI	R16, 255
+        LDI	R17, 255
+//   83   }
+//   84   return len > wLength ? wLength : len;
+??iccd_process_3:
+        CP	R24, R16
+        CPC	R25, R17
+        BRGE	??iccd_process_6
+        MOVW	R19:R18, R25:R24
+        RJMP	??iccd_process_7
+??iccd_process_4:
+        CPI	R18, 112
+        BRNE	??iccd_process_5
+        LDS	R18, lastRequest
+        CPI	R18, 111
+        BRNE	??iccd_process_8
+        LDI	R30, LOW(USBwriteLen)
+        LDI	R31, (USBwriteLen) >> 8
+        LD	R18, Z
+        LDD	R19, Z+1
+        LDI	R30, LOW(USBwrittenLen)
+        LDI	R31, (USBwrittenLen) >> 8
+        LD	R20, Z
+        LDD	R21, Z+1
+        CP	R18, R20
+        CPC	R19, R21
+        BRNE	??iccd_process_3
+        IN	R16, 0x03
+        SBRS	R16, 5
+        SBI	0x05, 0x05
+??iccd_process_9:
+        SBRC	R16, 5
+        CBI	0x05, 0x05
+??iccd_process_10:
+        RCALL	iccd_XfrBlockRead
+        LDI	R18, 112
+        STS	lastRequest, R18
+        RJMP	??iccd_process_3
+??iccd_process_8:
+        CPI	R18, 112
+        BRNE	??iccd_process_3
+        LDD	R16, Z+6
+        LDD	R17, Z+7
+        SUBI	R16, 248
+        SBCI	R17, 255
+        RJMP	??iccd_process_3
+??iccd_process_6:
+        MOVW	R19:R18, R17:R16
+??iccd_process_7:
+        MOVW	R17:R16, R19:R18
+??iccd_process_1:
+        RJMP	?Subroutine0
+//   85 }
+
+        ASEGN ABSOLUTE:DATA:NOROOT,025H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,023H
+// union <unnamed> volatile __io _A_PINB
+_A_PINB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,020H
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,021H
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,022H
+__?EEARH:
+
+        END
+//   86 
+//   87 
+//   88 
+// 
+//   2 bytes in segment ABSOLUTE
+// 312 bytes in segment CODE
+// 
+// 312 bytes of CODE memory
+//   0 bytes of DATA memory (+ 2 bytes shared)
+//
+//Errors: none
+//Warnings: none

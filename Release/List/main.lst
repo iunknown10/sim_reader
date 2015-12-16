@@ -1,0 +1,269 @@
+##############################################################################
+#                                                                            #
+#                                                      30/Oct/2005  13:40:07 #
+# IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version                #
+# Copyright 1996-2005 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\main.c            #
+#    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11\ #
+#                    Release\Obj\ -D NDEBUG -lCN                             #
+#                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\     #
+#                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List\ #
+#                     --initializers_in_flash -z9 --cross_call_passes=2      #
+#                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR    #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\" -I "E:\Program Files\IAR              #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\CLIB\" --eeprom_size 512                #
+#                    E:\yanglq\projects\agsm\firmware_ed11\main.c            #
+#    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\main #
+#                    .lst                                                    #
+#    Object file  =  E:\yanglq\projects\agsm\firmware_ed11\Release\Obj\main. #
+#                    r90                                                     #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+E:\yanglq\projects\agsm\firmware_ed11\main.c
+      1          /*
+      2            USB SmartCard reader with built in 3gpp-aka
+      3            yanglq 2005-10-5
+      4          */
+      5          #include <string.h>
+      6          #include <inavr.h>
+      7          #include <ioavr.h>
+      8          #include "usbdrv/usbdrv.h"
+      9          #include "scr/ccid.h"
+     10          #include "scr/iso7816.h"
+     11          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_Z>`
+     12          int    USBwriteLen;
+   \                     USBwriteLen:
+   \   00000000                      DS 2
+     13          int    USBwrittenLen;
+   \                     USBwrittenLen:
+   \   00000002                      DS 2
+     14          uchar  lastRequest;
+   \                     lastRequest:
+   \   00000004                      DS 1
+     15          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     16          uchar usbFunctionSetup(uchar data[8])
+   \                     usbFunctionSetup:
+     17          {
+     18            int len = 0;
+     19          
+     20            if(data[1] > 0x60)
+   \   00000000   01F8               MOVW    R31:R30, R17:R16
+   \   00000002   8121               LDD     R18, Z+1
+   \   00000004   3621               CPI     R18, 97
+   \   00000006   F068               BRCS    ??usbFunctionSetup_0
+     21            {
+     22              if(data[5] == 1)
+   \   00000008   8125               LDD     R18, Z+5
+   \   0000000A   3021               CPI     R18, 1
+   \   0000000C   F411               BRNE    ??usbFunctionSetup_1
+     23              {
+     24                len = iccd_process((PUSB_CCID_REQUEST)data);
+   \   0000000E   ....               RCALL   iccd_process
+     25                usbMsgPtr = (uchar *)&ccid_buf;
+   \   00000010   C001               RJMP    ??usbFunctionSetup_2
+     26              }else{
+     27                len = ccid_process((PUSB_CCID_REQUEST)data);
+   \                     ??usbFunctionSetup_1:
+   \   00000012   ....               RCALL   ccid_process
+     28                usbMsgPtr = (uchar *)&ccid_buf;
+   \                     ??usbFunctionSetup_2:
+   \   00000014   ....               LDI     R18, LOW(ccid_buf)
+   \   00000016   ....               LDI     R19, (ccid_buf) >> 8
+   \   00000018   ....               LDI     R30, LOW(usbMsgPtr)
+   \   0000001A   ....               LDI     R31, (usbMsgPtr) >> 8
+   \   0000001C   8320               ST      Z, R18
+   \   0000001E   8331               STD     Z+1, R19
+   \   00000020   9508               RET
+     29              }
+     30            }else{
+     31              len = -1;
+   \                     ??usbFunctionSetup_0:
+   \   00000022                      REQUIRE ?Subroutine0
+   \   00000022                      ;               // Fall through to label ?Subroutine0
+     32            }
+     33            return len;
+     34          }
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   00000000   EF0F               LDI     R16, 255
+   \   00000002   9508               RET
+     35          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     36          uchar usbFunctionRead(uchar *data, uchar len)
+   \                     usbFunctionRead:
+     37          {
+     38            return 0xff;
+   \   00000000   ....               RJMP    ?Subroutine0
+     39          }
+     40          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     41          uchar usbFunctionWrite(uchar *data, uchar len)
+   \                     usbFunctionWrite:
+     42          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+   \   00000002   01A8               MOVW    R21:R20, R17:R16
+     43            uchar i;
+     44            if((lastRequest != PC_to_RDR_XfrBlock) && (lastRequest != PC_to_RDR_SetParameters))
+   \   00000004   ....               LDI     R30, LOW(USBwriteLen)
+   \   00000006   ....               LDI     R31, (USBwriteLen) >> 8
+   \   00000008   8104               LDD     R16, Z+4
+   \   0000000A   360F               CPI     R16, 111
+   \   0000000C   F021               BREQ    ??usbFunctionWrite_0
+   \   0000000E   3601               CPI     R16, 97
+   \   00000010   F011               BREQ    ??usbFunctionWrite_0
+     45              return 0xff;
+   \   00000012   EF0F               LDI     R16, 255
+   \   00000014   C023               RJMP    ??usbFunctionWrite_1
+     46          
+     47            uchar *dst = ccid_buf.Request.Data+USBwrittenLen;
+   \                     ??usbFunctionWrite_0:
+   \   00000016   ....               LDI     R16, LOW((ccid_buf + 8))
+   \   00000018   ....               LDI     R17, (ccid_buf + 8) >> 8
+   \   0000001A   8162               LDD     R22, Z+2
+   \   0000001C   8173               LDD     R23, Z+3
+   \   0000001E   0F06               ADD     R16, R22
+   \   00000020   1F17               ADC     R17, R23
+     48            for(i=0; i<len; i++)
+   \   00000022   E030               LDI     R19, 0
+   \   00000024   C007               RJMP    ??usbFunctionWrite_2
+     49            {
+     50              *dst++ = *data++;
+   \                     ??usbFunctionWrite_3:
+   \   00000026   01DA               MOVW    R27:R26, R21:R20
+   \   00000028   916D               LD      R22, X+
+   \   0000002A   01AD               MOVW    R21:R20, R27:R26
+   \   0000002C   01D8               MOVW    R27:R26, R17:R16
+   \   0000002E   936D               ST      X+, R22
+   \   00000030   018D               MOVW    R17:R16, R27:R26
+     51            }
+   \   00000032   9533               INC     R19
+   \                     ??usbFunctionWrite_2:
+   \   00000034   1732               CP      R19, R18
+   \   00000036   F3B8               BRCS    ??usbFunctionWrite_3
+     52            USBwrittenLen += len;
+   \   00000038   E030               LDI     R19, 0
+   \   0000003A   8102               LDD     R16, Z+2
+   \   0000003C   2F17               MOV     R17, R23
+   \   0000003E   0F02               ADD     R16, R18
+   \   00000040   1F13               ADC     R17, R19
+   \   00000042   8302               STD     Z+2, R16
+   \   00000044   8313               STD     Z+3, R17
+     53            if((lastRequest == PC_to_RDR_SetParameters) && (USBwrittenLen == USBwriteLen))
+   \   00000046   8104               LDD     R16, Z+4
+   \   00000048   3601               CPI     R16, 97
+   \   0000004A   F439               BRNE    ??usbFunctionWrite_4
+   \   0000004C   8102               LDD     R16, Z+2
+   \   0000004E   8120               LD      R18, Z
+   \   00000050   8131               LDD     R19, Z+1
+   \   00000052   1702               CP      R16, R18
+   \   00000054   0713               CPC     R17, R19
+   \   00000056   F409               BRNE    ??usbFunctionWrite_4
+     54            {
+     55              ccid_SetParameters(USBwrittenLen);
+   \   00000058   ....               RCALL   ccid_SetParameters
+     56            }
+     57          
+     58            return 0;
+   \                     ??usbFunctionWrite_4:
+   \   0000005A   E000               LDI     R16, 0
+   \                     ??usbFunctionWrite_1:
+   \   0000005C   E0E4               LDI     R30, 4
+   \   0000005E   ....               RJMP    ?EPILOGUE_B4_L09
+     59          }
+     60          /* for test only */
+     61          extern void test_aka();
+     62          extern char test_iso7816();
+
+   \                                 In segment CODE, align 2, keep-with-next
+     63          void main(void)
+   \                     main:
+     64          {
+     65             /* test start */
+     66            //test_aka();
+     67            //if(test_iso7816())
+     68            //{//test iso7816 error.
+     69            //    LED_ON;
+     70            //}
+     71            /* test end*/
+     72            iso7816_init();
+   \   00000000   ....               RCALL   iso7816_init
+     73            DDRC_Bit1 = 1;
+   \   00000002   9A39               SBI     0x07, 0x01
+     74            PORTC_Bit1 = 1;            /* pull up D- resistor */
+   \   00000004   9A41               SBI     0x08, 0x01
+     75            usbInit();
+   \   00000006   ....               RCALL   usbInit
+     76            __enable_interrupt();
+   \   00000008   9478               SEI
+     77            for(;;){	        /* main event loop */
+     78              usbPoll();
+   \                     ??main_0:
+   \   0000000A   ....               RCALL   usbPoll
+   \   0000000C   CFFE               RJMP    ??main_0
+     79            }
+     80           }
+
+   \                                 In segment ABSOLUTE, at 0x28
+   \   union <unnamed> volatile __io _A_PORTC
+   \                     _A_PORTC:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x27
+   \   union <unnamed> volatile __io _A_DDRC
+   \                     _A_DDRC:
+   \   00000000                      DS 1
+
+   Maximum stack usage in bytes:
+
+     Function                CSTACK RSTACK
+     --------                ------ ------
+     main                        0      2
+       -> iso7816_init           0      2
+       -> usbInit                0      2
+       -> usbPoll                0      2
+     usbFunctionRead             0      2
+     usbFunctionSetup            0      2
+       -> iccd_process           0      2
+       -> ccid_process           0      2
+     usbFunctionWrite            4      2
+       -> ccid_SetParameters     4      2
+
+
+   Segment part sizes:
+
+     Function/Label   Bytes
+     --------------   -----
+     USBwriteLen         5
+     usbFunctionSetup   34
+     ?Subroutine0        4
+     usbFunctionRead     2
+     usbFunctionWrite   96
+     main               14
+     _A_PORTC            1
+     _A_DDRC             1
+      Others             6
+
+ 
+   2 bytes in segment ABSOLUTE
+ 150 bytes in segment CODE
+   6 bytes in segment INITTAB
+   5 bytes in segment NEAR_Z
+ 
+ 150 bytes of CODE memory (+ 6 bytes shared)
+   5 bytes of DATA memory (+ 2 bytes shared)
+
+Errors: none
+Warnings: none

@@ -1,0 +1,596 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+//                                                     30/Oct/2005  13:40:05 /
+// IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version               /
+// Copyright 1996-2005 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c       /
+//    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11 /
+//                    \Release\Obj\ -D NDEBUG -lCN                           /
+//                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\    /
+//                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List /
+//                    \ --initializers_in_flash -z9 --cross_call_passes=2    /
+//                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR   /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\" -I "E:\Program Files\IAR             /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\CLIB\" --eeprom_size 512               /
+//                    E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c       /
+//    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\cci /
+//                    d.s90                                                  /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME ccid
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?EPILOGUE_B4_L09
+        EXTERN ?PROLOGUE4_L09
+        EXTERN ?need_segment_init
+
+        PUBWEAK `?<Segment init: NEAR_Z>`
+        PUBWEAK _A_DDRB
+        PUBWEAK _A_DDRD
+        PUBWEAK _A_EIFR
+        PUBWEAK _A_OCR0A
+        PUBWEAK _A_PINB
+        PUBWEAK _A_PINC
+        PUBWEAK _A_PIND
+        PUBWEAK _A_PORTB
+        PUBWEAK _A_PORTC
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC ccid_GetParameters
+        PUBLIC ccid_GetSlotStatus
+        PUBLIC ccid_PowerOff
+        PUBLIC ccid_PowerOn
+        PUBLIC ccid_SetParameters
+        PUBLIC ccid_XfrBlock
+        PUBLIC ccid_XfrBlockRead
+        PUBLIC ccid_buf
+        PUBLIC ccid_process
+
+        EXTERN icc_reset
+        EXTERN read_atr
+        EXTERN t0_tpdu
+        EXTERN load_one_etu
+        EXTERN ERROR_CODE
+        EXTERN ERROR_STATUS
+        EXTERN OCR0Ax_FREQUENCY
+        EXTERN USBwriteLen
+        EXTERN USBwrittenLen
+        EXTERN lastRequest
+
+// E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c
+//    1 #include <inavr.h>
+//    2 #include <ioavr.h>
+//    3 #include "iso7816.h"
+//    4 #include "ccid.h"
+//    5 
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_Z>`
+//    6 USB_CCID_BUF ccid_buf;
+ccid_buf:
+        DS 271
+//    7 
+
+        RSEG CODE:CODE:NOROOT(1)
+//    8 uchar ccid_PowerOn()
+ccid_PowerOn:
+//    9 {
+        RCALL	?PROLOGUE4_L09
+//   10   uchar ret;
+//   11   icc_reset();
+        RCALL	icc_reset
+//   12   ret = read_atr(ccid_buf.Response.Data);
+        LDI	R26, LOW(ccid_buf)
+        LDI	R27, (ccid_buf) >> 8
+        MOVW	R17:R16, R27:R26
+        SUBI	R16, 248
+        SBCI	R17, 255
+        RCALL	read_atr
+//   13   ccid_buf.Response.ResponseHeader.wLength = ret+8;/* in order to compatible with asm version only */
+        MOV	R24, R16
+        LDI	R25, 0
+        ADIW	R25:R24, 8
+        ADIW	R27:R26, 6
+        ST	X+, R24
+        ST	X, R25
+        SBIW	R27:R26, 3
+//   14   ccid_buf.Response.ResponseHeader.bError = ERROR_CODE;
+        LDS	R17, ERROR_CODE
+        ST	X, R17
+//   15   ccid_buf.Response.ResponseHeader.bStatus = ERROR_STATUS;
+        LDS	R17, ERROR_STATUS
+        ST	-X, R17
+//   16   LED_ON;
+        SBI	0x05, 0x05
+//   17   return ret+8;
+        SUBI	R16, 248
+        RJMP	?Subroutine3
+//   18 }
+//   19 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   20 uchar ccid_PowerOff()
+ccid_PowerOff:
+//   21 {
+//   22   PowerOff();
+        CBI	0x0A, 0x06
+        CBI	0x04, 0x04
+        IN	R16, 0x06
+        ANDI	R16, 0xE3
+        OUT	0x08, R16
+//   23   LED_OFF;
+        CBI	0x05, 0x05
+//   24   ccid_buf.Response.ResponseHeader.wLength = 0;
+        LDI	R30, LOW(ccid_buf)
+        LDI	R31, (ccid_buf) >> 8
+        RCALL	?Subroutine0
+//   25   ccid_buf.Response.ResponseHeader.bError = 0;
+//   26   ccid_buf.Response.ResponseHeader.bStatus = 0;
+??CrossCallReturnLabel_0:
+        STD	Z+3, R16
+//   27   return 8;
+        REQUIRE ?Subroutine4
+        ;		// Fall through to label ?Subroutine4
+//   28 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine4:
+        LDI	R16, 8
+        RET
+//   29 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   30 int ccid_XfrBlock()
+ccid_XfrBlock:
+//   31 {
+//   32   return 0;
+        LDI	R16, 0
+        LDI	R17, 0
+        RET
+//   33 }
+//   34 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   35 int ccid_XfrBlockRead()
+ccid_XfrBlockRead:
+//   36 {
+        RCALL	?PROLOGUE4_L09
+//   37   int ret;
+//   38   ret = t0_tpdu(ccid_buf.Request.Data,ccid_buf.Request.RequestHeader.wLength,ccid_buf.Response.Data);
+        LDI	R26, LOW(ccid_buf)
+        LDI	R27, (ccid_buf) >> 8
+        MOVW	R21:R20, R27:R26
+        SUBI	R20, 248
+        SBCI	R21, 255
+        ADIW	R27:R26, 6
+        LD	R18, X+
+        LD	R19, X
+        SBIW	R27:R26, 7
+        MOVW	R17:R16, R27:R26
+        SUBI	R16, 248
+        SBCI	R17, 255
+        RCALL	t0_tpdu
+//   39   ccid_buf.Response.ResponseHeader.wLength = ret;
+        ADIW	R27:R26, 6
+        ST	X+, R16
+        ST	X, R17
+        SBIW	R27:R26, 3
+//   40   ccid_buf.Response.ResponseHeader.bError = ERROR_CODE;
+        LDS	R18, ERROR_CODE
+        ST	X, R18
+//   41   ccid_buf.Response.ResponseHeader.bStatus = ERROR_STATUS;
+        LDS	R18, ERROR_STATUS
+        ST	-X, R18
+//   42   return ret+8;
+        SUBI	R16, 248
+        SBCI	R17, 255
+        RJMP	?Subroutine3
+//   43 }
+//   44 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   45 uchar ccid_GetSlotStatus()
+ccid_GetSlotStatus:
+//   46 {
+//   47   if(PIND & (1<<CARD_STATUS))
+        LDI	R30, LOW(ccid_buf)
+        LDI	R31, (ccid_buf) >> 8
+        SBIS	0x09, 0x03
+        RJMP	??ccid_GetSlotStatus_0
+//   48     ccid_buf.Response.ResponseHeader.bStatus = ICC_PRESENT;
+        LDI	R16, 1
+        RJMP	??ccid_GetSlotStatus_1
+//   49   else
+//   50      ccid_buf.Response.ResponseHeader.bStatus = ICC_ABSENT;
+??ccid_GetSlotStatus_0:
+        LDI	R16, 2
+??ccid_GetSlotStatus_1:
+        STD	Z+3, R16
+//   51   ccid_buf.Response.ResponseHeader.wLength = 0;
+        RCALL	?Subroutine0
+//   52   ccid_buf.Response.ResponseHeader.bError = 0;
+//   53   return 8;
+??CrossCallReturnLabel_1:
+        RJMP	?Subroutine4
+//   54 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+        LDI	R16, 0
+        STD	Z+6, R16
+        STD	Z+7, R16
+        STD	Z+4, R16
+        RET
+//   55 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   56 uchar ccid_SetParameters(uchar n)
+ccid_SetParameters:
+//   57 {
+        RCALL	?PROLOGUE4_L09
+//   58   uchar *dst = &OCR0Ax_FREQUENCY;
+        LDI	R30, LOW(OCR0Ax_FREQUENCY)
+        LDI	R31, (OCR0Ax_FREQUENCY) >> 8
+//   59   uchar *src = ccid_buf.Request.Data;
+        LDI	R26, LOW((ccid_buf + 8))
+        LDI	R27, (ccid_buf + 8) >> 8
+//   60   do
+//   61   {
+//   62     *dst++ = *src++;
+??ccid_SetParameters_0:
+        LD	R17, X+
+        ST	Z+, R17
+//   63   }while(--n != 0);
+        DEC	R16
+        BRNE	??ccid_SetParameters_0
+//   64 
+//   65   OCR0A = OCR0Ax_FREQUENCY;
+        LDS	R16, OCR0Ax_FREQUENCY
+        OUT	0x27, R16
+//   66   load_one_etu();
+        RCALL	load_one_etu
+//   67   return 0;
+        LDI	R16, 0
+        REQUIRE ?Subroutine3
+        ;		// Fall through to label ?Subroutine3
+//   68 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine3:
+        LDI	R30, 4
+        RJMP	?EPILOGUE_B4_L09
+//   69 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   70 uchar ccid_GetParameters()
+ccid_GetParameters:
+//   71 {
+        RCALL	?PROLOGUE4_L09
+//   72   uchar *src = &OCR0Ax_FREQUENCY;
+        LDI	R30, LOW(OCR0Ax_FREQUENCY)
+        LDI	R31, (OCR0Ax_FREQUENCY) >> 8
+//   73   uchar *dst = ccid_buf.Response.Data;
+        LDI	R16, LOW(ccid_buf)
+        LDI	R17, (ccid_buf) >> 8
+        MOVW	R27:R26, R17:R16
+        ADIW	R27:R26, 8
+//   74   uchar n = &ERROR_CODE - src;
+        LDI	R20, LOW(ERROR_CODE)
+        SUBI	R20, LOW(OCR0Ax_FREQUENCY)
+//   75   uchar ret = n;
+        MOV	R18, R20
+        RJMP	??ccid_GetParameters_0
+//   76 
+//   77   while(n--)
+//   78   {
+//   79     *dst++ = *src++;
+??ccid_GetParameters_1:
+        LD	R19, Z+
+        ST	X+, R19
+//   80   }
+??ccid_GetParameters_0:
+        MOV	R19, R20
+        DEC	R20
+        TST	R19
+        BRNE	??ccid_GetParameters_1
+//   81   ccid_buf.Response.ResponseHeader.wLength = ret;
+        LDI	R19, 0
+        MOVW	R31:R30, R17:R16
+        STD	Z+6, R18
+        STD	Z+7, R19
+//   82   ccid_buf.Response.ResponseHeader.bError = ERROR_CODE;
+        LDS	R19, ERROR_CODE
+        STD	Z+4, R19
+//   83   ccid_buf.Response.ResponseHeader.bStatus = ERROR_STATUS;
+        LDS	R19, ERROR_STATUS
+        STD	Z+3, R19
+//   84   return ret+8;
+        SUBI	R18, 248
+        MOV	R16, R18
+        RJMP	?Subroutine3
+//   85 }
+//   86 
+//   87 extern int    USBwriteLen;
+//   88 extern int    USBwrittenLen;
+//   89 extern uchar  lastRequest;
+
+        RSEG CODE:CODE:NOROOT(1)
+//   90 int ccid_process(PUSB_CCID_REQUEST pCCIDRequest)
+ccid_process:
+//   91 {
+        RCALL	?PROLOGUE4_L09
+        MOVW	R19:R18, R17:R16
+//   92   int len = 0;
+        LDI	R20, 0
+        LDI	R21, 0
+//   93   int wLength = pCCIDRequest->RequestHeader.wLength;
+        MOVW	R31:R30, R17:R16
+        LDD	R24, Z+6
+        LDD	R25, Z+7
+//   94   uchar bRequestType = pCCIDRequest->RequestHeader.bMessageType;
+        LDD	R16, Z+1
+//   95 
+//   96   /* reset global error code */
+//   97   ERROR_CODE = 0;
+        STS	ERROR_CODE, R20
+//   98   ERROR_STATUS = 0;
+        STS	ERROR_STATUS, R20
+//   99   ccid_buf.Response.ResponseHeader.bMessageType = bRequestType;
+        LDI	R26, LOW(ccid_buf)
+        LDI	R27, (ccid_buf) >> 8
+        MOVW	R31:R30, R27:R26
+        STD	Z+1, R16
+//  100   ccid_buf.Response.ResponseHeader.bSeq = pCCIDRequest->RequestHeader.bSeq;
+        MOVW	R31:R30, R19:R18
+        LDD	R17, Z+2
+        MOVW	R31:R30, R27:R26
+        STD	Z+2, R17
+//  101 
+//  102   if(bRequestType == PC_to_RDR_IccPowerOn)
+        CPI	R16, 98
+        BRNE	??ccid_process_0
+//  103   {
+//  104     len = ccid_PowerOn();
+        RCALL	ccid_PowerOn
+??ccid_process_1:
+        MOV	R20, R16
+        LDI	R21, 0
+        RJMP	??ccid_process_2
+//  105   }else if(bRequestType == PC_to_RDR_IccPowerOff)
+??ccid_process_0:
+        CPI	R16, 99
+        BRNE	??ccid_process_3
+//  106   {
+//  107     len = ccid_PowerOff();
+        RCALL	ccid_PowerOff
+        RJMP	??ccid_process_1
+//  108   }else if(bRequestType == PC_to_RDR_XfrBlock)
+??ccid_process_3:
+        CPI	R16, 111
+        BRNE	??ccid_process_4
+//  109   {
+//  110     USBwriteLen = wLength;
+        RCALL	?Subroutine1
+//  111     ccid_buf.Request.RequestHeader.wLength = wLength;
+??CrossCallReturnLabel_2:
+        MOVW	R31:R30, R27:R26
+        STD	Z+6, R24
+        STD	Z+7, R25
+//  112     USBwrittenLen = 0;
+        RCALL	?Subroutine2
+//  113     lastRequest = PC_to_RDR_XfrBlock;
+??CrossCallReturnLabel_4:
+        LDI	R16, 111
+        RJMP	??ccid_process_5
+//  114     len = -1;
+//  115   }else if(bRequestType == PC_to_RDR_XfrBlockRead)
+??ccid_process_4:
+        CPI	R16, 112
+        BRNE	??ccid_process_6
+//  116   {
+//  117     if((lastRequest == PC_to_RDR_XfrBlock) && (USBwriteLen == USBwrittenLen))
+        LDS	R16, lastRequest
+        CPI	R16, 111
+        BRNE	??ccid_process_7
+        LDI	R30, LOW(USBwriteLen)
+        LDI	R31, (USBwriteLen) >> 8
+        LD	R16, Z
+        LDD	R17, Z+1
+        LDI	R30, LOW(USBwrittenLen)
+        LDI	R31, (USBwrittenLen) >> 8
+        LD	R18, Z
+        LDD	R19, Z+1
+        CP	R16, R18
+        CPC	R17, R19
+        BRNE	??ccid_process_2
+//  118     {
+//  119       LED_TOGGLE;
+        IN	R16, 0x03
+        SBRS	R16, 5
+        SBI	0x05, 0x05
+??ccid_process_8:
+        SBRC	R16, 5
+        CBI	0x05, 0x05
+//  120       __disable_interrupt(); /* FIXME: should disable INT0 only */
+??ccid_process_9:
+        CLI
+//  121       len = ccid_XfrBlockRead();
+        RCALL	ccid_XfrBlockRead
+        MOVW	R21:R20, R17:R16
+//  122       /* clear the INT0 pending bit */
+//  123       EIFR |= (1<<INTF0);
+        SBI	0x1C, 0x00
+//  124       __enable_interrupt();
+        SEI
+//  125       lastRequest = PC_to_RDR_XfrBlockRead;
+        LDI	R16, 112
+        STS	lastRequest, R16
+        RJMP	??ccid_process_2
+//  126     }else if(lastRequest == PC_to_RDR_XfrBlockRead)
+??ccid_process_7:
+        CPI	R16, 112
+        BRNE	??ccid_process_2
+//  127     {
+//  128       len = ccid_buf.Request.RequestHeader.wLength+8;
+        LDD	R20, Z+6
+        LDD	R21, Z+7
+        SUBI	R20, 248
+        SBCI	R21, 255
+        RJMP	??ccid_process_2
+//  129     }
+//  130   }else if(bRequestType == PC_to_RDR_GetSlotStatus)
+??ccid_process_6:
+        CPI	R16, 101
+        BRNE	??ccid_process_10
+//  131   {
+//  132     len = ccid_GetSlotStatus();
+        RCALL	ccid_GetSlotStatus
+        RJMP	??ccid_process_1
+//  133   }else if(bRequestType == PC_to_RDR_GetParameters)
+??ccid_process_10:
+        CPI	R16, 108
+        BRNE	??ccid_process_11
+//  134   {
+//  135     len = ccid_GetParameters();
+        RCALL	ccid_GetParameters
+        RJMP	??ccid_process_1
+//  136   }else if(bRequestType == PC_to_RDR_SetParameters)
+??ccid_process_11:
+        CPI	R16, 97
+        BRNE	??ccid_process_12
+//  137   {
+//  138     USBwriteLen = wLength;
+        RCALL	?Subroutine1
+//  139     USBwrittenLen = 0;
+??CrossCallReturnLabel_3:
+        RCALL	?Subroutine2
+//  140     lastRequest = PC_to_RDR_SetParameters;
+??CrossCallReturnLabel_5:
+        LDI	R16, 97
+??ccid_process_5:
+        STS	lastRequest, R16
+//  141     len = -1;
+//  142   }else{
+//  143     len = -1;
+??ccid_process_12:
+        LDI	R20, 255
+        LDI	R21, 255
+//  144   }
+//  145   return len > wLength ? wLength : len;
+??ccid_process_2:
+        CP	R24, R20
+        CPC	R25, R21
+        BRGE	??ccid_process_13
+        MOVW	R17:R16, R25:R24
+        RJMP	??ccid_process_14
+??ccid_process_13:
+        MOVW	R17:R16, R21:R20
+??ccid_process_14:
+        RJMP	?Subroutine3
+//  146 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine2:
+        LDI	R30, LOW(USBwrittenLen)
+        LDI	R31, (USBwrittenLen) >> 8
+        ST	Z, R20
+        STD	Z+1, R20
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        LDI	R30, LOW(USBwriteLen)
+        LDI	R31, (USBwriteLen) >> 8
+        ST	Z, R24
+        STD	Z+1, R25
+        RET
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_Z>`:
+        DW	SFE(NEAR_Z) - SFB(NEAR_Z)
+        DW	SFB(NEAR_Z)
+        DW	0
+        REQUIRE ?need_segment_init
+
+        ASEGN ABSOLUTE:DATA:NOROOT,047H
+// union <unnamed> volatile __io _A_OCR0A
+_A_OCR0A:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03cH
+// union <unnamed> volatile __io _A_EIFR
+_A_EIFR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02aH
+// union <unnamed> volatile __io _A_DDRD
+_A_DDRD:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,029H
+// union <unnamed> volatile __io _A_PIND
+_A_PIND:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,028H
+// union <unnamed> volatile __io _A_PORTC
+_A_PORTC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,026H
+// union <unnamed> volatile __io _A_PINC
+_A_PINC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,025H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,024H
+// union <unnamed> volatile __io _A_DDRB
+_A_DDRB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,023H
+// union <unnamed> volatile __io _A_PINB
+_A_PINB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,020H
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,021H
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,022H
+__?EEARH:
+
+        END
+//  147 
+//  148 
+//  149 
+//  150 
+// 
+//   9 bytes in segment ABSOLUTE
+// 476 bytes in segment CODE
+//   6 bytes in segment INITTAB
+// 271 bytes in segment NEAR_Z
+// 
+// 476 bytes of CODE memory (+ 6 bytes shared)
+// 271 bytes of DATA memory (+ 9 bytes shared)
+//
+//Errors: none
+//Warnings: none

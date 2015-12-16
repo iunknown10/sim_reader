@@ -1,0 +1,1026 @@
+##############################################################################
+#                                                                            #
+#                                                      30/Oct/2005  13:40:13 #
+# IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version                #
+# Copyright 1996-2005 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\usbdrv\usbdrv.c   #
+#    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11\ #
+#                    Release\Obj\ -D NDEBUG -lCN                             #
+#                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\     #
+#                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List\ #
+#                     --initializers_in_flash -z9 --cross_call_passes=2      #
+#                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR    #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\" -I "E:\Program Files\IAR              #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\CLIB\" --eeprom_size 512                #
+#                    E:\yanglq\projects\agsm\firmware_ed11\usbdrv\usbdrv.c   #
+#    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\usbd #
+#                    rv.lst                                                  #
+#    Object file  =  E:\yanglq\projects\agsm\firmware_ed11\Release\Obj\usbdr #
+#                    v.r90                                                   #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+E:\yanglq\projects\agsm\firmware_ed11\usbdrv\usbdrv.c
+      1          /* Name: usbdrv.c
+      2           * Project: AVR USB driver
+      3           * Author: Christian Starkjohann
+      4           * Creation Date: 2004-12-29
+      5           * Tabsize: 4
+      6           * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
+      7           * License: Proprietary, free under certain conditions. See Documentation.
+      8           * This Revision: $Id: usbdrv.c 53 2005-04-12 17:11:29Z cs $
+      9           */
+     10          #include <inavr.h>
+     11          #include <ioavr.h>
+     12          #include "usbdrv.h"
+     13          #include "oddebug.h"
+     14          
+     15          /*
+     16          General Description:
+     17          This module implements the C-part of the USB driver. See usbdrv.h for a
+     18          documentation of the entire driver.
+     19          */
+     20          
+     21          /* ------------------------------------------------------------------------- */
+     22          
+     23          /* raw USB registers / interface to assembler code: */
+     24          /* usbRxBuf MUST be in 1 byte addressable range (because usbInputBuf is only 1 byte) */
+     25          /* usbRxBuf can be in 2 bytes addressable range now. yanglq 2005-10-7*/
+     26          uchar	        usbRxBuf[2][USB_BUFSIZE];/* raw RX buffer: PID, 8 bytes data, 2 bytes CRC */
+     27          uchar		usbDeviceId;		/* assigned during enumeration, defaults to 0 */
+     28          unsigned char   *usbInputBuf;		/* ptr to raw buffer used for receiving */
+     29          unsigned char   *usbAppBuf;			/* ptr to raw buffer passed to app for processing */
+     30          volatile char   usbRxLen;			/* = 0; number of bytes in usbAppBuf; 0 means free */
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_Z>`
+     31          uchar		usbCurrentTok;		/* last token received */
+   \                     usbCurrentTok:
+   \   00000000                      DS 1
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_I>`
+     32          uchar		usbRxToken;			/* token for data we received */
+     33          uchar		usbMsgLen = 0xff;	/* remaining number of bytes, no msg to send if -1 (see usbMsgPtr) */
+     34          volatile signed char usbTxLen = -1;	/* number of bytes to transmit with next IN token */
+     35          uchar		usbTxBuf[USB_BUFSIZE];/* data to transmit with next IN, free if usbTxLen == -1 */
+   \                     usbTxBuf:
+   \   00000000                      DS 11
+   \   0000000B                      REQUIRE `?<Initializer for usbTxBuf>`
+   \                     usbInputBuf:
+   \   0000000B                      DS 2
+   \   0000000D                      REQUIRE `?<Initializer for usbInputBuf>`
+   \                     usbAppBuf:
+   \   0000000D                      DS 2
+   \   0000000F                      REQUIRE `?<Initializer for usbAppBuf>`
+     36          #if USB_CFG_HAVE_INTRIN_ENDPOINT
+     37          /* uchar		usbRxEndp;		endpoint which was addressed (1 bit in MSB) [not impl] */
+     38          volatile char   usbTxLen1 = -1;	/* TX count for endpoint 1 */
+     39          uchar		usbTxBuf1[USB_BUFSIZE];/* TX data for endpoint 1 */
+     40          #endif
+     41          uchar		usbAckBuf[1] = {USBPID_ACK};	/* transmit buffer for ack tokens */
+     42          uchar		usbNakBuf[1] = {USBPID_NAK};	/* transmit buffer for nak tokens */
+     43          
+     44          /* USB status registers / not shared with asm code */
+     45          uchar		*usbMsgPtr;		/* data to transmit next -- ROM or RAM address */
+   \                     usbMsgPtr:
+   \   0000000F                      DS 2
+   \   00000011                      REQUIRE `?<Initializer for usbMsgPtr>`
+   \                     usbDeviceId:
+   \   00000011                      DS 1
+   \   00000012                      REQUIRE `?<Initializer for usbDeviceId>`
+   \                     usbRxLen:
+   \   00000012                      DS 1
+   \   00000013                      REQUIRE `?<Initializer for usbRxLen>`
+   \                     usbRxToken:
+   \   00000013                      DS 1
+   \   00000014                      REQUIRE `?<Initializer for usbRxToken>`
+   \                     usbMsgLen:
+   \   00000014                      DS 1
+   \   00000015                      REQUIRE `?<Initializer for usbMsgLen>`
+   \                     usbTxLen:
+   \   00000015                      DS 1
+   \   00000016                      REQUIRE `?<Initializer for usbTxLen>`
+   \   00000016                      DS 1
+   \   00000017                      REQUIRE `?<Initializer for usbMsgFlags>`
+   \   00000017                      DS 1
+   \   00000018                      REQUIRE `?<Initializer for usbNewDeviceId>`
+   \   00000018                      DS 1
+   \   00000019                      REQUIRE `?<Initializer for usbIsReset>`
+   \                     usbRxBuf:
+   \   00000019                      DS 22
+   \   0000002F                      REQUIRE `?<Initializer for usbRxBuf>`
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_I>`
+   \                     usbAckBuf:
+   \   00000000                      DS 1
+   \   00000001                      REQUIRE `?<Initializer for usbAckBuf>`
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_I>`
+   \                     usbNakBuf:
+   \   00000000                      DS 1
+   \   00000001                      REQUIRE `?<Initializer for usbNakBuf>`
+     46          static uchar	usbMsgFlags;	/* flag values see below */
+     47          static uchar	usbNewDeviceId;	/* = 0; device ID which should be set after status phase */
+     48          static uchar	usbIsReset;		/* = 0; USB bus is in reset phase */
+     49          
+     50          #define	USB_FLG_TX_PACKET		(1<<0)
+     51          /* Leave free 6 bits after TX_PACKET. This way we can increment usbMsgFlags to toggle TX_PACKET */
+     52          #define	USB_FLG_MSGPTR_IS_ROM	(1<<6)
+     53          #define	USB_FLG_USE_DEFAULT_RW	(1<<7)
+     54          
+     55          /*
+     56          optimizing hints:
+     57          - do not post/pre inc/dec integer values in operations
+     58          - assign value of PRG_RDB() to register variables and don't use side effects in arg
+     59          - use narrow scope for variables which should be in X/Y/Z register
+     60          - assign char sized expressions to variables to force 8 bit arithmetics
+     61          */
+     62          
+     63          /* ------------------------------------------------------------------------- */
+     64          
+
+   \                                 In segment NEAR_F, align 1, keep-with-next
+     65          __flash static char usbDescrDevice[] = {	/* USB device descriptor */
+   \                     ??usbDescrDevice:
+   \   00000000   0112010100FF       DB 18, 1, 1, 1, 255, 0, 0, 8, 158, 10, 17, 237, 0, 1, 1, 2, 0, 1
+   \              08000A9EED11
+   \              010002010100
+   \   00000012   020900120101       DB 9, 2, 18, 0, 1, 1, 0, 128, 25, 9, 4, 0, 0, 0, 0, 0, 0, 0
+   \              800009190004
+   \              000000000000
+   \   00000024   03040409           DB 4, 3, 9, 4
+   \   00000028   031800610067       DW 792, 97, 103, 115, 109, 46, 115, 102, 46, 110, 101, 116
+   \              0073006D002E
+   \              00730066002E
+   \              006E00650074
+   \   00000040   032C00550053       DW 812, 85, 83, 66, 32, 83, 109, 97, 114, 116, 32, 67, 97, 114, 100, 32
+   \              004200200053
+   \              006D00610072
+   \              007400200043
+   \              006100720064
+   \              0020        
+   \   00000060   005200650061       DW 82, 101, 97, 100, 101, 114
+   \              006400650072
+     66          	18,			/* sizeof(usbDescrDevice): length of descriptor in bytes */
+     67          	1,			/* descriptor type */
+     68          	0x01, 0x01,	/* USB version supported */
+     69          	USB_CFG_DEVICE_CLASS,
+     70          	USB_CFG_DEVICE_SUBCLASS,
+     71          	0,			/* protocol */
+     72          	8,			/* max packet size */
+     73          	USB_CFG_VENDOR_ID,	/* 2 bytes */
+     74          	USB_CFG_DEVICE_ID,	/* 2 bytes */
+     75          	USB_CFG_DEVICE_VERSION,	/* 2 bytes */
+     76          #if USB_CFG_VENDOR_NAME_LEN
+     77          	1,			/* manufacturer string index */
+     78          #else
+     79          	0,			/* manufacturer string index */
+     80          #endif
+     81          #if USB_CFG_DEVICE_NAME_LEN
+     82          	2,			/* product string index */
+     83          #else
+     84          	0,			/* product string index */
+     85          #endif
+     86          	0,			/* serial number string index */
+     87          	1,			/* number of configurations */
+     88          };
+     89          
+     90          __flash static char usbDescrConfig[] = {	/* USB configuration descriptor */
+     91          	9,			/* sizeof(usbDescrConfig): length of descriptor in bytes */
+     92          	2,			/* descriptor type */
+     93          	(18 + 7 * USB_CFG_HAVE_INTRIN_ENDPOINT), 0,	/* total length of data returned (including inlined descriptors) */
+     94          	1,			/* number of interfaces in this configuration */
+     95          	1,			/* index of this configuration */
+     96          	0,			/* configuration name string index */
+     97          #if USB_CFG_IS_SELF_POWERED
+     98          	USBATTR_SELFPOWER,	/* attributes */
+     99          #else
+    100          	USBATTR_BUSPOWER,	/* attributes */
+    101          #endif
+    102          	USB_CFG_MAX_BUS_POWER/2,			/* max USB current in 2mA units */
+    103          /* interface descriptor follows inline: */
+    104          	9,			/* sizeof(usbDescrInterface): length of descriptor in bytes */
+    105          	4,			/* descriptor type */
+    106          	0,			/* index of this interface */
+    107          	0,			/* alternate setting for this interface */
+    108          	USB_CFG_HAVE_INTRIN_ENDPOINT,	/* endpoints excl 0: number of endpoint descriptors to follow */
+    109          	USB_CFG_INTERFACE_CLASS,
+    110          	USB_CFG_INTERFACE_SUBCLASS,
+    111          	USB_CFG_INTERFACE_PROTOCOL,
+    112          	0,			/* string index for interface */
+    113          #if USB_CFG_HAVE_INTRIN_ENDPOINT	/* endpoint descriptor for endpoint 1 */
+    114          	7,			/* sizeof(usbDescrEndpoint) */
+    115          	5,			/* descriptor type = endpoint */
+    116          	0x81,		/* IN endpoint number 1 */
+    117          	0x03,		/* attrib: Interrupt endpoint */
+    118          	8, 0,		/* maximum packet size */
+    119          	USB_CFG_INTR_POLL_INTERVAL,	/* in ms */
+    120          #endif
+    121          };
+    122          
+    123          __flash static char usbDescrString0[] = {	/* language descriptor */
+    124          	4,			/* sizeof(usbDescrString0): length of descriptor in bytes */
+    125          	3,			/* descriptor type */
+    126          	0x09, 0x04,	/* language index (0x0409 = US-English) */
+    127          };
+    128          
+    129          #if USB_CFG_VENDOR_NAME_LEN
+    130          __flash static int usbDescrString1[] = {
+    131          	(2 * USB_CFG_VENDOR_NAME_LEN + 2) | (3<<8),	/* length of descriptor in bytes | descriptor type */
+    132          	USB_CFG_VENDOR_NAME
+    133          };
+    134          #endif
+    135          #if USB_CFG_DEVICE_NAME_LEN
+    136          __flash static int usbDescrString2[] = {
+    137          	(2 * USB_CFG_DEVICE_NAME_LEN + 2) | (3<<8),	/* length of descriptor in bytes | descriptor type */
+    138          	USB_CFG_DEVICE_NAME
+    139          };
+    140          #endif
+    141          
+    142          /* We don't use prog_int or prog_int16_t for compatibility with various libc
+    143           * versions. Here's an other compatibility hack:
+    144           */
+    145          #ifndef PRG_RDB
+    146          #define	PRG_RDB(addr)	__load_program_memory((unsigned char __flash *)addr)
+    147          #endif
+    148          
+    149          typedef union{
+    150          	unsigned	word;
+    151          	uchar		*ptr;
+    152          	uchar		bytes[2];
+    153          }converter_t;
+    154          /* We use this union to do type conversions. This is better optimized than
+    155           * type casts in gcc 3.4.3 and much better than using bit shifts to build
+    156           * ints from chars. Byte ordering is not a problem on an 8 bit platform.
+    157           */
+    158          
+    159          /* ------------------------------------------------------------------------- */
+    160          
+    161          #if USB_CFG_HAVE_INTRIN_ENDPOINT
+    162          static uchar	usbTxPacketCnt1;
+    163          
+    164          void	usbSetInterrupt(uchar *data, uchar len)
+    165          {
+    166          uchar		*p, i;
+    167          converter_t	crc;
+    168          
+    169          	if(len > 7)
+    170          		len = 7;
+    171          	i = USBPID_DATA1;
+    172          	if(usbTxPacketCnt1 & 1)
+    173          		i = USBPID_DATA0;
+    174          	if(usbTxLen1 < 0){		/* packet buffer was empty */
+    175          		usbTxPacketCnt1++;
+    176          	}else{
+    177          		usbTxLen1 = -1;		/* avoid sending incomplete interrupt data */
+    178          	}
+    179          	p = usbTxBuf1;
+    180          	*p++ = i;
+    181          	for(i=len;i--;)
+    182          		*p++ = *data++;
+    183          	crc.word = usbCrc16(&usbTxBuf1[1], len);
+    184          	usbTxBuf1[len + 1] = crc.bytes[0];
+    185          	usbTxBuf1[len + 2] = crc.bytes[1];
+    186          	usbTxLen1 = len + 4;	/* len must be given including sync byte */
+    187          }
+    188          #endif
+    189          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    190          static void	usbWrite(uchar *data, uchar len)
+   \                     ??usbWrite:
+    191          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+    192          #if USB_CFG_IMPLEMENT_FN_WRITE
+    193          	if(!(usbMsgFlags & USB_FLG_USE_DEFAULT_RW)){
+   \   00000002   ....               LDI     R26, LOW(usbTxBuf)
+   \   00000004   ....               LDI     R27, (usbTxBuf) >> 8
+   \   00000006   9656               ADIW    R27:R26, 22
+   \   00000008   913C               LD      R19, X
+   \   0000000A   9756               SBIW    R27:R26, 22
+   \   0000000C   FD37               SBRC    R19, 7
+   \   0000000E   C008               RJMP    ??usbWrite_1
+    194          		if(usbFunctionWrite(data, len) == 0xff){	/* an error occurred */
+   \   00000010   ....               RCALL   usbFunctionWrite
+   \   00000012   3F0F               CPI     R16, 255
+   \   00000014   F429               BRNE    ??usbWrite_1
+    195          			/* usbMsgLen = 0xff; cancel potentially pending ACK [has been done by ASM module when OUT token arrived] */
+    196          			usbTxBuf[0] = USBPID_STALL;
+   \   00000016   E10E               LDI     R16, 30
+   \   00000018   930C               ST      X, R16
+    197          			usbTxLen = 2;		/* length including sync byte */
+   \   0000001A   E002               LDI     R16, 2
+   \   0000001C   9655               ADIW    R27:R26, 21
+   \   0000001E   C004               RJMP    ??usbWrite_2
+    198          			return;
+    199          		}
+    200          	}
+    201          #endif
+    202          	usbMsgLen = 0;		/* send zero-sized block as ACK */
+   \                     ??usbWrite_1:
+   \   00000020   E000               LDI     R16, 0
+   \   00000022   9654               ADIW    R27:R26, 20
+   \   00000024   930C               ST      X, R16
+   \   00000026   9612               ADIW    R27:R26, 2
+    203          	usbMsgFlags = 0;	/* start with a DATA1 package */
+   \                     ??usbWrite_2:
+   \   00000028   930C               ST      X, R16
+    204          }
+   \   0000002A   ....               RJMP    ?Subroutine0
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   00000000   E0E4               LDI     R30, 4
+   \   00000002   ....               RJMP    ?EPILOGUE_B4_L09
+    205          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    206          static uchar	usbRead(uchar *data, uchar len)
+   \                     ??usbRead:
+    207          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+    208          #if USB_CFG_IMPLEMENT_FN_READ
+    209          	if(usbMsgFlags & USB_FLG_USE_DEFAULT_RW){
+   \   00000002   ....               LDI     R26, LOW(usbTxBuf)
+   \   00000004   ....               LDI     R27, (usbTxBuf) >> 8
+   \   00000006   01FD               MOVW    R31:R30, R27:R26
+   \   00000008   8936               LDD     R19, Z+22
+   \   0000000A   FF37               SBRS    R19, 7
+   \   0000000C   C01F               RJMP    ??usbRead_1
+    210          #endif
+    211          		uchar i = len, *r = usbMsgPtr;
+   \   0000000E   2F42               MOV     R20, R18
+   \   00000010   8587               LDD     R24, Z+15
+   \   00000012   8990               LDD     R25, Z+16
+    212          		if(usbMsgFlags & USB_FLG_MSGPTR_IS_ROM){	/* ROM data */
+   \   00000014   FF36               SBRS    R19, 6
+   \   00000016   C011               RJMP    ??usbRead_2
+    213          			while(i--){
+   \                     ??usbRead_3:
+   \   00000018   2F34               MOV     R19, R20
+   \   0000001A   954A               DEC     R20
+   \   0000001C   2333               TST     R19
+   \   0000001E   F089               BREQ    ??usbRead_4
+    214          				char c = PRG_RDB(r);	/* assign to char size variable to enforce byte ops */
+    215          				*data++ = c;
+   \   00000020   01FC               MOVW    R31:R30, R25:R24
+   \   00000022   9004               LPM     R0, Z
+   \   00000024   01F8               MOVW    R31:R30, R17:R16
+   \   00000026   9201               ST      Z+, R0
+   \   00000028   018F               MOVW    R17:R16, R31:R30
+    216          				r++;
+   \   0000002A   9601               ADIW    R25:R24, 1
+   \   0000002C   CFF5               RJMP    ??usbRead_3
+    217          			}
+    218          		}else{					/* RAM data */
+    219          			while(i--)
+    220          				*data++ = *r++;
+   \                     ??usbRead_5:
+   \   0000002E   01FC               MOVW    R31:R30, R25:R24
+   \   00000030   9131               LD      R19, Z+
+   \   00000032   01CF               MOVW    R25:R24, R31:R30
+   \   00000034   01F8               MOVW    R31:R30, R17:R16
+   \   00000036   9331               ST      Z+, R19
+   \   00000038   018F               MOVW    R17:R16, R31:R30
+   \                     ??usbRead_2:
+   \   0000003A   2F34               MOV     R19, R20
+   \   0000003C   954A               DEC     R20
+   \   0000003E   2333               TST     R19
+   \   00000040   F7B1               BRNE    ??usbRead_5
+    221          		}
+    222          		usbMsgPtr = r;
+   \                     ??usbRead_4:
+   \   00000042   01FD               MOVW    R31:R30, R27:R26
+   \   00000044   8787               STD     Z+15, R24
+   \   00000046   8B90               STD     Z+16, R25
+    223          		return len;
+   \   00000048   2F02               MOV     R16, R18
+   \   0000004A   C005               RJMP    ??usbRead_6
+    224          #if USB_CFG_IMPLEMENT_FN_READ
+    225          	}else{
+    226          		if(len != 0)	/* don't bother app with 0 sized reads */
+   \                     ??usbRead_1:
+   \   0000004C   2322               TST     R18
+   \   0000004E   F011               BREQ    ??usbRead_7
+    227          			return usbFunctionRead(data, len);
+   \   00000050   ....               RCALL   usbFunctionRead
+   \   00000052   C001               RJMP    ??usbRead_6
+    228          		return 0;
+   \                     ??usbRead_7:
+   \   00000054   E000               LDI     R16, 0
+   \                     ??usbRead_6:
+   \   00000056   ....               RJMP    ?Subroutine0
+    229          	}
+    230          #endif
+    231          }
+    232          
+    233          /* Don't make this function static to avoid inlining.
+    234           * The entire function would become too large and exceed the range of
+    235           * relative jumps.
+    236           */
+
+   \                                 In segment CODE, align 2, keep-with-next
+    237          void	usbProcessRx(uchar *data, uchar len)
+   \                     usbProcessRx:
+    238          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+   \   00000002   01A8               MOVW    R21:R20, R17:R16
+    239          /* We use if() cascades because the compare is done byte-wise while switch()
+    240           * is int-based. The if() cascades are therefore more efficient.
+    241           */
+    242          	DBG2(0x10 + (usbRxToken == (uchar)USBPID_SETUP), data, len);
+    243          	if(usbRxToken == (uchar)USBPID_SETUP){
+   \   00000004   ....               LDI     R26, LOW(usbTxBuf)
+   \   00000006   ....               LDI     R27, (usbTxBuf) >> 8
+   \   00000008   01FD               MOVW    R31:R30, R27:R26
+   \   0000000A   8903               LDD     R16, Z+19
+   \   0000000C   320D               CPI     R16, 45
+   \   0000000E   F009               BREQ    $+2+2
+   \   00000010   C061               RJMP    ??usbProcessRx_0
+    244          		uchar replyLen = 0, flags = USB_FLG_USE_DEFAULT_RW;
+   \   00000012   E080               LDI     R24, 0
+   \   00000014   E890               LDI     R25, 128
+    245          		if(len == 8){	/* Setup size must be always 8 bytes. Ignore otherwise. */
+   \   00000016   3028               CPI     R18, 8
+   \   00000018   F009               BREQ    $+2+2
+   \   0000001A   C058               RJMP    ??usbProcessRx_1
+    246          			uchar type = data[0] & (3 << 5);
+    247          			if(type == (USBRQ_TYPE_STANDARD << 5)){
+   \   0000001C   01FA               MOVW    R31:R30, R21:R20
+   \   0000001E   8100               LD      R16, Z
+   \   00000020   7600               ANDI    R16, 0x60
+   \   00000022   F009               BREQ    $+2+2
+   \   00000024   C04D               RJMP    ??usbProcessRx_2
+    248          				uchar *replyData = usbTxBuf + 9; /* there is 3 bytes free space at the end of the buffer */
+   \   00000026   018D               MOVW    R17:R16, R27:R26
+   \   00000028   5F07               SUBI    R16, 247
+   \   0000002A   4F1F               SBCI    R17, 255
+    249          				replyData[0] = 0;
+   \   0000002C   01FD               MOVW    R31:R30, R27:R26
+   \   0000002E   8781               STD     Z+9, R24
+    250          				if(data[1] == 0){/* GET_STATUS */
+   \   00000030   01FA               MOVW    R31:R30, R21:R20
+   \   00000032   8121               LDD     R18, Z+1
+   \   00000034   2322               TST     R18
+   \   00000036   F421               BRNE    ??usbProcessRx_3
+    251          #if USB_CFG_IS_SELF_POWERED
+    252          					uchar recipient = data[0] & 0x1f;	/* assign arith ops to variables to enforce byte size */
+    253          					if(recipient == USBRQ_RCPT_DEVICE)
+    254          						replyData[0] =  USB_CFG_IS_SELF_POWERED;
+    255          #endif
+    256          					replyData[1] = 0;
+   \   00000038   01FD               MOVW    R31:R30, R27:R26
+   \   0000003A   8782               STD     Z+10, R24
+    257          					replyLen = 2;
+   \   0000003C   E082               LDI     R24, 2
+   \   0000003E   C034               RJMP    ??usbProcessRx_4
+    258          				}else if(data[1] == 5){		/* SET_ADDRESS */
+   \                     ??usbProcessRx_3:
+   \   00000040   3025               CPI     R18, 5
+   \   00000042   F421               BRNE    ??usbProcessRx_5
+    259          					usbNewDeviceId = data[2];
+   \   00000044   8122               LDD     R18, Z+2
+   \   00000046   01FD               MOVW    R31:R30, R27:R26
+   \   00000048   8B27               STD     Z+23, R18
+   \   0000004A   C02E               RJMP    ??usbProcessRx_4
+    260          				}else if(data[1] == 6){		/* GET_DESCRIPTOR */
+   \                     ??usbProcessRx_5:
+   \   0000004C   3026               CPI     R18, 6
+   \   0000004E   F519               BRNE    ??usbProcessRx_6
+    261          					flags = USB_FLG_MSGPTR_IS_ROM | USB_FLG_USE_DEFAULT_RW;
+   \   00000050   EC90               LDI     R25, 192
+    262          					if(data[3] == 1){		/* descriptor type requested */
+   \   00000052   8123               LDD     R18, Z+3
+   \   00000054   3021               CPI     R18, 1
+   \   00000056   F421               BRNE    ??usbProcessRx_7
+    263          						replyLen = sizeof(usbDescrDevice);
+   \   00000058   E182               LDI     R24, 18
+    264          						replyData = (uchar *)usbDescrDevice;
+   \   0000005A   ....               LDI     R16, LOW(??usbDescrDevice)
+   \   0000005C   ....               LDI     R17, (??usbDescrDevice) >> 8
+   \   0000005E   C024               RJMP    ??usbProcessRx_4
+    265          					}else if(data[3] == 2){
+   \                     ??usbProcessRx_7:
+   \   00000060   3022               CPI     R18, 2
+   \   00000062   F421               BRNE    ??usbProcessRx_8
+    266          						replyLen = sizeof(usbDescrConfig);
+   \   00000064   E182               LDI     R24, 18
+    267          						replyData = (uchar *)usbDescrConfig;
+   \   00000066   ....               LDI     R16, LOW((??usbDescrDevice + 18))
+   \   00000068   ....               LDI     R17, (??usbDescrDevice + 18) >> 8
+   \   0000006A   C01E               RJMP    ??usbProcessRx_4
+    268          					}else if(data[3] == 3){	/* string descriptor */
+   \                     ??usbProcessRx_8:
+   \   0000006C   3023               CPI     R18, 3
+   \   0000006E   F4E1               BRNE    ??usbProcessRx_4
+    269          						if(data[2] == 0){	/* descriptor index */
+   \   00000070   8122               LDD     R18, Z+2
+   \   00000072   2322               TST     R18
+   \   00000074   F421               BRNE    ??usbProcessRx_9
+    270          							replyLen = sizeof(usbDescrString0);
+   \   00000076   E084               LDI     R24, 4
+    271          							replyData = (uchar *)usbDescrString0;
+   \   00000078   ....               LDI     R16, LOW((??usbDescrDevice + 36))
+   \   0000007A   ....               LDI     R17, (??usbDescrDevice + 36) >> 8
+   \   0000007C   C015               RJMP    ??usbProcessRx_4
+    272          #if USB_CFG_VENDOR_NAME_LEN
+    273          						}else if(data[2] == 1){
+   \                     ??usbProcessRx_9:
+   \   0000007E   3021               CPI     R18, 1
+   \   00000080   F421               BRNE    ??usbProcessRx_10
+    274          							replyLen = sizeof(usbDescrString1);
+   \   00000082   E188               LDI     R24, 24
+    275          							replyData = (uchar *)usbDescrString1;
+   \   00000084   ....               LDI     R16, LOW((??usbDescrDevice + 40))
+   \   00000086   ....               LDI     R17, (??usbDescrDevice + 40) >> 8
+   \   00000088   C00F               RJMP    ??usbProcessRx_4
+    276          #endif
+    277          #if USB_CFG_DEVICE_NAME_LEN
+    278          						}else if(data[2] == 2){
+   \                     ??usbProcessRx_10:
+   \   0000008A   3022               CPI     R18, 2
+   \   0000008C   F469               BRNE    ??usbProcessRx_4
+    279          							replyLen = sizeof(usbDescrString2);
+   \   0000008E   E28C               LDI     R24, 44
+    280          							replyData = (uchar *)usbDescrString2;
+   \   00000090   ....               LDI     R16, LOW((??usbDescrDevice + 64))
+   \   00000092   ....               LDI     R17, (??usbDescrDevice + 64) >> 8
+   \   00000094   C009               RJMP    ??usbProcessRx_4
+    281          #endif
+    282          						}
+    283          					}
+    284          				}else if(data[1] == 8){		/* GET_CONFIGURATION */
+   \                     ??usbProcessRx_6:
+   \   00000096   3028               CPI     R18, 8
+   \   00000098   F421               BRNE    ??usbProcessRx_11
+    285          					replyLen = 1;
+   \   0000009A   E081               LDI     R24, 1
+    286          					replyData[0] = 1;	/* config is always 1, no setConfig required */
+   \   0000009C   01FD               MOVW    R31:R30, R27:R26
+   \   0000009E   8781               STD     Z+9, R24
+   \   000000A0   C003               RJMP    ??usbProcessRx_4
+    287          				}else if(data[1] == 10){	/* GET_INTERFACE */
+   \                     ??usbProcessRx_11:
+   \   000000A2   302A               CPI     R18, 10
+   \   000000A4   F409               BRNE    ??usbProcessRx_4
+    288          					replyLen = 1;
+   \   000000A6   E081               LDI     R24, 1
+    289          #if USB_CFG_HAVE_INTRIN_ENDPOINT
+    290          				}else if(data[1] == 11){	/* SET_INTERFACE */
+    291          					usbTxPacketCnt1 = 0;	/* reset data toggling for interrupt socket */
+    292          #endif
+    293          				}else{
+    294          					/* the following requests can be ignored, send default reply */
+    295          					/* 1: CLEAR_FEATURE, 3: SET_FEATURE, 7: SET_DESCRIPTOR */
+    296          					/* 9: SET_CONFIGURATION, 11: SET_INTERFACE, 12: SYNCH_FRAME */
+    297          				}
+    298          				usbMsgPtr = replyData;
+   \                     ??usbProcessRx_4:
+   \   000000A8   01FD               MOVW    R31:R30, R27:R26
+   \   000000AA   8707               STD     Z+15, R16
+   \   000000AC   8B10               STD     Z+16, R17
+    299          				if(!data[7] && replyLen > data[6])	/* max length is in data[7]:data[6] */
+   \   000000AE   01FA               MOVW    R31:R30, R21:R20
+   \   000000B0   8107               LDD     R16, Z+7
+   \   000000B2   2300               TST     R16
+   \   000000B4   F459               BRNE    ??usbProcessRx_1
+   \   000000B6   8106               LDD     R16, Z+6
+   \   000000B8   1708               CP      R16, R24
+   \   000000BA   F440               BRCC    ??usbProcessRx_1
+    300          					replyLen = data[6];
+   \                     ??usbProcessRx_12:
+   \   000000BC   2F80               MOV     R24, R16
+   \   000000BE   C006               RJMP    ??usbProcessRx_1
+    301          			}else{	/* not a standard request -- must be vendor or class request */
+    302          #if USB_CFG_IMPLEMENT_FN_READ || USB_CFG_IMPLEMENT_FN_WRITE
+    303          				uchar	len;
+    304          				replyLen = data[6];	/* if this is an OUT operation, the next token will reset usbMsgLen */
+   \                     ??usbProcessRx_2:
+   \   000000C0   8186               LDD     R24, Z+6
+    305          				if((len = usbFunctionSetup(data)) != 0xff){
+   \   000000C2   018A               MOVW    R17:R16, R21:R20
+   \   000000C4   ....               RCALL   usbFunctionSetup
+   \   000000C6   3F0F               CPI     R16, 255
+   \   000000C8   F7C9               BRNE    ??usbProcessRx_12
+    306          					replyLen = len;
+    307          				}else{
+    308          					flags = 0;	/* we have no valid msg, use read/write functions */
+   \   000000CA   E090               LDI     R25, 0
+    309          				}
+    310          #else
+    311          				replyLen = usbFunctionSetup(data);
+    312          #endif
+    313          			}
+    314          		}
+    315          		usbMsgLen = replyLen;
+   \                     ??usbProcessRx_1:
+   \   000000CC   01FD               MOVW    R31:R30, R27:R26
+   \   000000CE   8B84               STD     Z+20, R24
+    316          		usbMsgFlags = flags;
+   \   000000D0   8B96               STD     Z+22, R25
+   \   000000D2   C002               RJMP    ??usbProcessRx_13
+    317          	}else{	/* out request */
+    318          		usbWrite(data, len);
+   \                     ??usbProcessRx_0:
+   \   000000D4   018A               MOVW    R17:R16, R21:R20
+   \   000000D6   ....               RCALL   ??usbWrite
+    319          	}
+    320          }
+   \                     ??usbProcessRx_13:
+   \   000000D8                      REQUIRE ?Subroutine0
+   \   000000D8                      ;               // Fall through to label ?Subroutine0
+    321          
+    322          /* ------------------------------------------------------------------------- */
+    323          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    324          static void	usbBuildTxBlock(void)
+   \                     ??usbBuildTxBlock:
+    325          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+   \   00000002   9722               SBIW    R29:R28, 2
+    326          uchar		wantLen, len, txLen, x;
+    327          converter_t	crc;
+    328          
+    329          	x = USBPID_DATA1;
+   \   00000004   E40B               LDI     R16, 75
+    330          	if(usbMsgFlags & USB_FLG_TX_PACKET)
+   \   00000006   ....               LDI     R26, LOW(usbTxBuf)
+   \   00000008   ....               LDI     R27, (usbTxBuf) >> 8
+   \   0000000A   01FD               MOVW    R31:R30, R27:R26
+   \   0000000C   8916               LDD     R17, Z+22
+   \   0000000E   FD10               SBRC    R17, 0
+    331          		x = USBPID_DATA0;
+   \   00000010   EC03               LDI     R16, 195
+    332          	usbMsgFlags++;
+   \                     ??usbBuildTxBlock_1:
+   \   00000012   9513               INC     R17
+   \   00000014   8B16               STD     Z+22, R17
+    333          	usbTxBuf[0] = x;
+   \   00000016   930C               ST      X, R16
+    334          	wantLen = usbMsgLen;
+   \   00000018   8924               LDD     R18, Z+20
+    335          	if(wantLen > 8)
+   \   0000001A   3029               CPI     R18, 9
+   \   0000001C   F008               BRCS    ??usbBuildTxBlock_2
+    336          		wantLen = 8;
+   \   0000001E   E028               LDI     R18, 8
+    337          	usbMsgLen -= wantLen;
+   \                     ??usbBuildTxBlock_2:
+   \   00000020   8904               LDD     R16, Z+20
+   \   00000022   1B02               SUB     R16, R18
+   \   00000024   8B04               STD     Z+20, R16
+    338          	len = usbRead(usbTxBuf + 1, wantLen);
+   \   00000026   018D               MOVW    R17:R16, R27:R26
+   \   00000028   5F0F               SUBI    R16, 255
+   \   0000002A   4F1F               SBCI    R17, 255
+   \   0000002C   ....               RCALL   ??usbRead
+   \   0000002E   2F80               MOV     R24, R16
+    339          	if(len <= 8){	/* valid data packet */
+   \   00000030   3009               CPI     R16, 9
+   \   00000032   F4C8               BRCC    ??usbBuildTxBlock_3
+    340          		crc.word = usbCrc16(&usbTxBuf[1], len);
+   \   00000034   2F40               MOV     R20, R16
+   \   00000036   018D               MOVW    R17:R16, R27:R26
+   \   00000038   5F0F               SUBI    R16, 255
+   \   0000003A   4F1F               SBCI    R17, 255
+   \   0000003C   ....               RCALL   usbCrc16
+   \   0000003E   8308               ST      Y, R16
+   \   00000040   8319               STD     Y+1, R17
+    341          		usbTxBuf[len + 1] = crc.bytes[0];
+   \   00000042   E090               LDI     R25, 0
+   \   00000044   01FD               MOVW    R31:R30, R27:R26
+   \   00000046   0FE8               ADD     R30, R24
+   \   00000048   1FF9               ADC     R31, R25
+   \   0000004A   8301               STD     Z+1, R16
+    342          		usbTxBuf[len + 2] = crc.bytes[1];
+   \   0000004C   8129               LDD     R18, Y+1
+   \   0000004E   8322               STD     Z+2, R18
+    343          		txLen = len + 4;	/* length including sync byte */
+   \   00000050   2F08               MOV     R16, R24
+   \   00000052   5F0C               SUBI    R16, 252
+    344          		if(len < 8)		/* a partial package identifies end of message */
+   \   00000054   3088               CPI     R24, 8
+   \   00000056   F418               BRCC    ??usbBuildTxBlock_4
+    345          			usbMsgLen = 0xff;
+   \                     ??usbBuildTxBlock_5:
+   \   00000058   EF1F               LDI     R17, 255
+   \   0000005A   01FD               MOVW    R31:R30, R27:R26
+   \   0000005C   8B14               STD     Z+20, R17
+    346          	}else{
+    347          		usbTxBuf[0] = USBPID_STALL;
+    348          		txLen = 2;	/* length including sync byte */
+    349          		usbMsgLen = 0xff;
+    350          	}
+    351          	usbTxLen = txLen;
+   \                     ??usbBuildTxBlock_4:
+   \   0000005E   01FD               MOVW    R31:R30, R27:R26
+   \   00000060   8B05               STD     Z+21, R16
+    352          	DBG2(0x20, usbTxBuf, txLen-1);
+    353          }
+   \   00000062   9622               ADIW    R29:R28, 2
+   \   00000064   ....               RJMP    ?Subroutine0
+   \                     ??usbBuildTxBlock_3:
+   \   00000066   E10E               LDI     R16, 30
+   \   00000068   930C               ST      X, R16
+   \   0000006A   E002               LDI     R16, 2
+   \   0000006C   CFF5               RJMP    ??usbBuildTxBlock_5
+    354          
+    355          static inline uchar	isNotSE0(void)
+    356          {
+    357          uchar	rval;
+    358          /* We want to do
+    359           *     return (USBIN & USBMASK);
+    360           * here, but the compiler does int-expansion acrobatics.
+    361           * We can avoid this by assigning to a char-sized variable.
+    362           */
+    363          	rval = USBIN & USBMASK;
+    364          	return rval;
+    365          }
+    366          
+    367          /* ------------------------------------------------------------------------- */
+    368          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    369          void	usbPoll(void)
+   \                     usbPoll:
+    370          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+    371          uchar	len;
+    372          	if((len = usbRxLen) > 0){
+   \   00000002   ....               LDI     R26, LOW(usbTxBuf)
+   \   00000004   ....               LDI     R27, (usbTxBuf) >> 8
+   \   00000006   9652               ADIW    R27:R26, 18
+   \   00000008   910C               LD      R16, X
+   \   0000000A   9752               SBIW    R27:R26, 18
+   \   0000000C   2F20               MOV     R18, R16
+   \   0000000E   2300               TST     R16
+   \   00000010   F071               BREQ    ??usbPoll_0
+    373          /* We could check CRC16 here -- but ACK has already been sent anyway. If you
+    374           * need data integrity checks with this driver, check the CRC in your app
+    375           * code and report errors back to the host. Since the ACK was already sent,
+    376           * retries must be handled on application level.
+    377           * unsigned crc = usbCrc16((uchar *)(unsigned)(usbAppBuf + 1), usbRxLen - 3);
+    378           */
+    379          		len -= 3;	/* remove PID and CRC */
+   \   00000012   5023               SUBI    R18, 3
+    380          		if(len < 128){
+   \   00000014   3820               CPI     R18, 128
+   \   00000016   F438               BRCC    ??usbPoll_1
+    381          			usbProcessRx((uchar *)(unsigned)(usbAppBuf + 1), len);
+   \   00000018   961D               ADIW    R27:R26, 13
+   \   0000001A   910D               LD      R16, X+
+   \   0000001C   911C               LD      R17, X
+   \   0000001E   971E               SBIW    R27:R26, 14
+   \   00000020   5F0F               SUBI    R16, 255
+   \   00000022   4F1F               SBCI    R17, 255
+   \   00000024   ....               RCALL   usbProcessRx
+    382          		}
+    383          		usbRxLen = 0;	/* mark rx buffer as available */
+   \                     ??usbPoll_1:
+   \   00000026   E000               LDI     R16, 0
+   \   00000028   9652               ADIW    R27:R26, 18
+   \   0000002A   930C               ST      X, R16
+   \   0000002C   9752               SBIW    R27:R26, 18
+    384          	}
+    385          	if(usbTxLen < 0){	/* TX system is idle */
+   \                     ??usbPoll_0:
+   \   0000002E   9655               ADIW    R27:R26, 21
+   \   00000030   910C               LD      R16, X
+   \   00000032   9755               SBIW    R27:R26, 21
+   \   00000034   2300               TST     R16
+   \   00000036   F492               BRPL    ??usbPoll_2
+    386          		if(usbMsgLen != 0xff){
+   \   00000038   9654               ADIW    R27:R26, 20
+   \   0000003A   910C               LD      R16, X
+   \   0000003C   9754               SBIW    R27:R26, 20
+   \   0000003E   3F0F               CPI     R16, 255
+   \   00000040   F011               BREQ    ??usbPoll_3
+    387          			usbBuildTxBlock();
+   \   00000042   ....               RCALL   ??usbBuildTxBlock
+   \   00000044   C00B               RJMP    ??usbPoll_2
+    388          		}else if(usbNewDeviceId){
+   \                     ??usbPoll_3:
+   \   00000046   9657               ADIW    R27:R26, 23
+   \   00000048   910C               LD      R16, X
+   \   0000004A   9757               SBIW    R27:R26, 23
+   \   0000004C   2300               TST     R16
+   \   0000004E   F031               BREQ    ??usbPoll_2
+    389          			usbDeviceId = usbNewDeviceId;
+   \   00000050   9651               ADIW    R27:R26, 17
+   \   00000052   930C               ST      X, R16
+   \   00000054   9616               ADIW    R27:R26, 6
+    390          			DBG1(1, &usbNewDeviceId, 1);
+    391          			usbNewDeviceId = 0;
+   \   00000056   E000               LDI     R16, 0
+   \   00000058   930C               ST      X, R16
+   \   0000005A   9757               SBIW    R27:R26, 23
+    392          		}
+    393          	}
+    394          	if(isNotSE0()){	/* SE0 state */
+   \                     ??usbPoll_2:
+   \   0000005C   B103               IN      R16, 0x03
+   \   0000005E   7003               ANDI    R16, 0x03
+   \   00000060   F019               BREQ    ??usbPoll_4
+    395          		usbIsReset = 0;
+   \   00000062   E000               LDI     R16, 0
+   \   00000064   9658               ADIW    R27:R26, 24
+   \   00000066   C012               RJMP    ??usbPoll_5
+    396          	}else{
+    397          		/* check whether SE0 lasts for more than 2.5us (3.75 bit times) */
+    398          		if(!usbIsReset){
+   \                     ??usbPoll_4:
+   \   00000068   9658               ADIW    R27:R26, 24
+   \   0000006A   910C               LD      R16, X
+   \   0000006C   9758               SBIW    R27:R26, 24
+   \   0000006E   2300               TST     R16
+   \   00000070   F471               BRNE    ??usbPoll_6
+    399          			uchar i;
+    400          			for(i=100;i;i--){
+   \   00000072   E604               LDI     R16, 100
+    401          				if(isNotSE0())
+   \                     ??usbPoll_7:
+   \   00000074   B113               IN      R17, 0x03
+   \   00000076   7013               ANDI    R17, 0x03
+   \   00000078   F451               BRNE    ??usbPoll_6
+    402          					goto notUsbReset;
+    403          			}
+   \   0000007A   950A               DEC     R16
+   \   0000007C   F7D9               BRNE    ??usbPoll_7
+    404          			usbIsReset = 1;
+   \   0000007E   E001               LDI     R16, 1
+   \   00000080   9658               ADIW    R27:R26, 24
+   \   00000082   930C               ST      X, R16
+   \   00000084   9717               SBIW    R27:R26, 7
+    405          			usbDeviceId = 0;
+   \   00000086   E000               LDI     R16, 0
+   \   00000088   930C               ST      X, R16
+   \   0000008A   9616               ADIW    R27:R26, 6
+    406          			usbNewDeviceId = 0;
+   \                     ??usbPoll_5:
+   \   0000008C   930C               ST      X, R16
+    407          			DBG1(0xff, 0, 0);
+    408          notUsbReset:;
+    409          		}
+    410          	}
+    411          }
+   \                     ??usbPoll_6:
+   \   0000008E   ....               RJMP    ?Subroutine0
+    412          
+    413          /* ------------------------------------------------------------------------- */
+    414          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    415          void	usbInit(void)
+   \                     usbInit:
+    416          {
+    417          	usbInputBuf = usbRxBuf[0];
+   \   00000000   ....               LDI     R30, LOW(usbTxBuf)
+   \   00000002   ....               LDI     R31, (usbTxBuf) >> 8
+   \   00000004   018F               MOVW    R17:R16, R31:R30
+   \   00000006   5E07               SUBI    R16, 231
+   \   00000008   4F1F               SBCI    R17, 255
+   \   0000000A   8703               STD     Z+11, R16
+   \   0000000C   8714               STD     Z+12, R17
+    418          	usbAppBuf = usbRxBuf[1];
+   \   0000000E   018F               MOVW    R17:R16, R31:R30
+   \   00000010   5D0C               SUBI    R16, 220
+   \   00000012   4F1F               SBCI    R17, 255
+   \   00000014   8705               STD     Z+13, R16
+   \   00000016   8716               STD     Z+14, R17
+    419          #if USB_INTR_CFG_SET != 0
+    420          	USB_INTR_CFG |= USB_INTR_CFG_SET;
+   \   00000018   91000069           LDS     R16, 105
+   \   0000001C   6003               ORI     R16, 0x03
+   \   0000001E   93000069           STS     105, R16
+    421          #endif
+    422          #if USB_INTR_CFG_CLR != 0
+    423          	USB_INTR_CFG &= ~(USB_INTR_CFG_CLR);
+    424          #endif
+    425          	USB_INTR_ENABLE |= (1 << USB_INTR_ENABLE_BIT);
+   \   00000022   9AE8               SBI     0x1D, 0x00
+    426          }
+   \   00000024   9508               RET
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for usbTxBuf>`:
+   \   00000000   000000000000       DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0000000000  
+   \                     `?<Initializer for usbInputBuf>`:
+   \   0000000B   0000               DB 0, 0
+   \                     `?<Initializer for usbAppBuf>`:
+   \   0000000D   0000               DB 0, 0
+   \                     `?<Initializer for usbMsgPtr>`:
+   \   0000000F   0000               DB 0, 0
+   \                     `?<Initializer for usbDeviceId>`:
+   \   00000011   00                 DB 0
+   \                     `?<Initializer for usbRxLen>`:
+   \   00000012   00                 DB 0
+   \                     `?<Initializer for usbRxToken>`:
+   \   00000013   00                 DB 0
+   \                     `?<Initializer for usbMsgLen>`:
+   \   00000014   FF                 DB 255
+   \                     `?<Initializer for usbTxLen>`:
+   \   00000015   FF                 DB 255
+   \                     `?<Initializer for usbMsgFlags>`:
+   \   00000016   00                 DB 0
+   \                     `?<Initializer for usbNewDeviceId>`:
+   \   00000017   00                 DB 0
+   \                     `?<Initializer for usbIsReset>`:
+   \   00000018   00                 DB 0
+   \                     `?<Initializer for usbRxBuf>`:
+   \   00000019   000000000000       DB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              000000000000
+   \              000000000000
+   \              00000000    
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for usbAckBuf>`:
+   \   00000000   D2                 DB 210
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for usbNakBuf>`:
+   \   00000000   5A                 DB 90
+
+   \                                 In segment ABSOLUTE, at 0x69
+   \   union <unnamed> volatile __io _A_EICRA
+   \                     _A_EICRA:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3d
+   \   union <unnamed> volatile __io _A_EIMSK
+   \                     _A_EIMSK:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x23
+   \   union <unnamed> volatile __io _A_PINB
+   \                     _A_PINB:
+   \   00000000                      DS 1
+    427          
+    428          /* ------------------------------------------------------------------------- */
+
+   Maximum stack usage in bytes:
+
+     Function              CSTACK RSTACK
+     --------              ------ ------
+     usbBuildTxBlock           6      2
+       -> usbRead              6      2
+       -> usbCrc16             6      2
+     usbInit                   0      2
+     usbPoll                   4      2
+       -> usbProcessRx         4      2
+       -> usbBuildTxBlock      4      2
+     usbProcessRx              4      2
+       -> usbFunctionSetup     4      2
+       -> usbWrite             4      2
+     usbRead                   4      2
+       -> usbFunctionRead      4      2
+     usbWrite                  4      2
+       -> usbFunctionWrite     4      2
+
+
+   Segment part sizes:
+
+     Function/Label               Bytes
+     --------------               -----
+     usbCurrentTok                   1
+     usbTxBuf                       47
+     usbAckBuf                       1
+     usbNakBuf                       1
+     usbDescrDevice                108
+     usbWrite                       44
+     ?Subroutine0                    4
+     usbRead                        88
+     usbProcessRx                  216
+     usbBuildTxBlock               110
+     usbPoll                       144
+     usbInit                        38
+     ?<Initializer for usbTxBuf>    47
+     ?<Initializer for usbAckBuf>    1
+     ?<Initializer for usbNakBuf>    1
+     _A_EICRA                        1
+     _A_EIMSK                        1
+     _A_PINB                         1
+      Others                        12
+
+ 
+   3 bytes in segment ABSOLUTE
+ 644 bytes in segment CODE
+  12 bytes in segment INITTAB
+ 108 bytes in segment NEAR_F
+  49 bytes in segment NEAR_I
+  49 bytes in segment NEAR_ID
+   1 byte  in segment NEAR_Z
+ 
+ 801 bytes of CODE memory (+ 12 bytes shared)
+  50 bytes of DATA memory (+  3 bytes shared)
+
+Errors: none
+Warnings: none

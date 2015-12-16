@@ -1,0 +1,1141 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+//                                                     30/Oct/2005  13:54:34 /
+// IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version               /
+// Copyright 1996-2005 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\scr\iso7816.c    /
+//    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11 /
+//                    \Release\Obj\ -D NDEBUG -lCN                           /
+//                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\    /
+//                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List /
+//                    \ --initializers_in_flash -z9 --cross_call_passes=2    /
+//                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR   /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\" -I "E:\Program Files\IAR             /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\CLIB\" --eeprom_size 512               /
+//                    E:\yanglq\projects\agsm\firmware_ed11\scr\iso7816.c    /
+//    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\iso /
+//                    7816.s90                                               /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME iso7816
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?EPILOGUE_B4_L09
+        EXTERN ?EPILOGUE_B5_L09
+        EXTERN ?EPILOGUE_B6_L09
+        EXTERN ?PROLOGUE4_L09
+        EXTERN ?PROLOGUE5_L09
+        EXTERN ?PROLOGUE6_L09
+        EXTERN ?Register_R4_is_cg_reg
+        EXTERN ?Register_R5_is_cg_reg
+        EXTERN ?need_segment_init
+
+        PUBWEAK `?<Segment init: NEAR_I>`
+        PUBWEAK `?<Segment init: NEAR_Z>`
+        PUBWEAK `??INTVEC 4`
+        PUBLIC ERROR_CODE
+        PUBLIC ERROR_STATUS
+        PUBLIC GEM12_atr
+        PUBLIC INT1Handler
+        PUBLIC OCR0Ax_FREQUENCY
+        PUBLIC RESEND_TIMES
+        PUBLIC TIMEOUT_COUNTE
+        PUBLIC TIMEOUT_COUNTH
+        PUBLIC TIMEOUT_COUNTL
+        PUBLIC TMR1_0P5ETUH
+        PUBLIC TMR1_0P5ETUL
+        PUBLIC TMR1_1P0ETUH
+        PUBLIC TMR1_1P0ETUL
+        PUBLIC TMR1_VOLATH
+        PUBLIC TMR1_VOLATL
+        PUBWEAK _A_DDRB
+        PUBWEAK _A_DDRC
+        PUBWEAK _A_DDRD
+        PUBWEAK _A_EICRA
+        PUBWEAK _A_EIMSK
+        PUBWEAK _A_GPIOR0
+        PUBWEAK _A_OCR0A
+        PUBWEAK _A_PINC
+        PUBWEAK _A_PORTB
+        PUBWEAK _A_PORTC
+        PUBWEAK _A_TCCR0A
+        PUBWEAK _A_TCCR0B
+        PUBWEAK _A_TCCR1A
+        PUBWEAK _A_TCNT1
+        PUBWEAK _A_TIFR1
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC atr
+        PUBLIC cmd_get_res
+        PUBLIC cmd_select_mf
+        PUBLIC icc_reset
+        PUBLIC iso7816_init
+        PUBLIC load_timer1_count
+        PUBLIC read_atr
+        PUBLIC ret_atr
+        PUBLIC skipProcedureNull
+        PUBLIC t0_tpdu
+        PUBLIC test_iso7816
+
+        EXTERN GetChar
+        EXTERN SendChar
+        EXTERN timer1_stop
+        EXTERN timer1_start
+        EXTERN load_one_etu
+        EXTERN ReverseByte
+        EXTERN memcmp
+
+// E:\yanglq\projects\agsm\firmware_ed11\scr\iso7816.c
+//    1 /* iso7816.c 2005-10-8 */
+//    2 
+//    3 #include <ioavr.h>
+//    4 #include "iso7816.h"
+//    5 
+//    6 #define WAIT_TIME_FLAG        while(TIFR1_Bit1 == 0){}
+//    7 #define TIMER_COMP_FLAG_CLR   TIFR1_Bit1 = 0x01
+//    8 
+//    9 /* variable from OCR0Ax_FREQUENCY to ERROR_CODE must be continuous in memory */
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   10 uchar OCR0Ax_FREQUENCY = ORC0Ax;
+OCR0Ax_FREQUENCY:
+        DS 1
+        REQUIRE `?<Initializer for OCR0Ax_FREQUENCY>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   11 uchar TIMEOUT_COUNTE = 100;
+TIMEOUT_COUNTE:
+        DS 1
+        REQUIRE `?<Initializer for TIMEOUT_COUNTE>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   12 uchar TIMEOUT_COUNTL = (60000&0xff);
+TIMEOUT_COUNTL:
+        DS 1
+        REQUIRE `?<Initializer for TIMEOUT_COUNTL>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   13 uchar TIMEOUT_COUNTH = (60000>>8);
+TIMEOUT_COUNTH:
+        DS 1
+        REQUIRE `?<Initializer for TIMEOUT_COUNTH>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   14 uchar RESEND_TIMES = 2;
+RESEND_TIMES:
+        DS 1
+        REQUIRE `?<Initializer for RESEND_TIMES>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   15 uchar TMR1_VOLATL = (124*(ORC0Ax+1)&0xff);
+TMR1_VOLATL:
+        DS 1
+        REQUIRE `?<Initializer for TMR1_VOLATL>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   16 uchar TMR1_VOLATH = 1;/* (124*(ORC0Ax+1)>>8); hacking for these variables continuous store*/
+TMR1_VOLATH:
+        DS 1
+        REQUIRE `?<Initializer for TMR1_VOLATH>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   17 uchar TMR1_0P5ETUL = (372*(ORC0Ax+1)&0xff);
+TMR1_0P5ETUL:
+        DS 1
+        REQUIRE `?<Initializer for TMR1_0P5ETUL>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   18 uchar TMR1_0P5ETUH = (372*(ORC0Ax+1)>>8);
+TMR1_0P5ETUH:
+        DS 1
+        REQUIRE `?<Initializer for TMR1_0P5ETUH>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   19 uchar TMR1_1P0ETUL = (744*(ORC0Ax+1)&0xff);
+TMR1_1P0ETUL:
+        DS 1
+        REQUIRE `?<Initializer for TMR1_1P0ETUL>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   20 uchar TMR1_1P0ETUH = (744*(ORC0Ax+1)>>8);
+TMR1_1P0ETUH:
+        DS 1
+        REQUIRE `?<Initializer for TMR1_1P0ETUH>`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   21 uchar ERROR_CODE = 1;/* hacking for these variables continuous store*/
+ERROR_CODE:
+        DS 1
+        REQUIRE `?<Initializer for ERROR_CODE>`
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_Z>`
+//   22 uchar ERROR_STATUS;
+ERROR_STATUS:
+        DS 1
+//   23 
+//   24 uchar skipProcedureNull();
+
+        RSEG CODE:CODE:NOROOT(1)
+//   25 static uchar iso7816_getbytes(uchar *data, uchar len)
+??iso7816_getbytes:
+//   26 {
+        RCALL	?PROLOGUE4_L09
+        MOVW	R27:R26, R17:R16
+//   27   uchar i = len;
+        MOV	R24, R18
+//   28 
+//   29   while(i--)
+??iso7816_getbytes_1:
+        MOV	R16, R24
+        DEC	R24
+        TST	R16
+        BREQ	??iso7816_getbytes_2
+//   30   {
+//   31     *data++ = GetChar();
+        RCALL	GetChar
+        ST	X+, R16
+//   32     if(ERROR_STATUS != 0)
+        LDS	R16, ERROR_STATUS
+        TST	R16
+        BREQ	??iso7816_getbytes_1
+//   33       return 1;
+        LDI	R16, 1
+        RJMP	??iso7816_getbytes_3
+//   34   }
+//   35   return 0;
+??iso7816_getbytes_2:
+        LDI	R16, 0
+??iso7816_getbytes_3:
+        LDI	R30, 4
+        RJMP	?EPILOGUE_B4_L09
+//   36 }
+//   37 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   38 static uchar iso7816_sendbytes(uchar *data, uchar len, uchar cmd)
+??iso7816_sendbytes:
+//   39 {
+        RCALL	?PROLOGUE5_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        MOVW	R27:R26, R17:R16
+        MOV	R24, R19
+//   40   uchar i = len;
+        MOV	R25, R18
+        RJMP	??iso7816_sendbytes_1
+//   41   uchar proc;
+//   42   uchar ch;
+//   43 
+//   44   while(i--)
+//   45   {
+//   46     ch = *data++;
+//   47     if(SendChar(ch) != ch)
+//   48       return 1;
+//   49     if(GPIOR0 & (1<<ONE_BY_ONE_FLAG))
+??iso7816_sendbytes_2:
+        SBIS	0x1E, 0x01
+        RJMP	??iso7816_sendbytes_1
+//   50     {
+//   51       proc = skipProcedureNull();
+//   52       if(proc == cmd)
+        RCALL	skipProcedureNull
+        CP	R16, R24
+        BRNE	??iso7816_sendbytes_1
+//   53         GPIOR0 &= ~(1<<ONE_BY_ONE_FLAG);
+        CBI	0x1E, 0x01
+//   54     }
+??iso7816_sendbytes_1:
+        MOV	R16, R25
+        DEC	R25
+        TST	R16
+        BREQ	??iso7816_sendbytes_3
+        LD	R4, X+
+        MOV	R16, R4
+        RCALL	SendChar
+        CP	R16, R4
+        BREQ	??iso7816_sendbytes_2
+        LDI	R16, 1
+        RJMP	??iso7816_sendbytes_4
+//   55   }
+//   56   return 0;
+??iso7816_sendbytes_3:
+        LDI	R16, 0
+??iso7816_sendbytes_4:
+        LDI	R30, 5
+        RJMP	?EPILOGUE_B5_L09
+//   57 }
+//   58 
+//   59 static inline void PowerPinInit()
+//   60 {
+//   61   /* Power Pin init*/
+//   62 
+//   63   DDRC |= 0x1c;
+//   64   DDRD &= ~(1<<C3_CLK);
+//   65   DDRB &= ~(1<<C2_RESET);
+//   66 }
+//   67 
+//   68 static inline void PowerOn()
+//   69 {
+//   70   PORTC = (PINC|0x1c);
+//   71   DDRD |= (1<<C3_CLK);
+//   72   DDRB |= (1<<C2_RESET);
+//   73 }
+//   74 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   75 __version_1 void load_timer1_count(uint n)
+load_timer1_count:
+//   76 {
+//   77   TCNT1H = (n>>8);
+        STS	133, R17
+//   78   TCNT1L = (n&0xff);
+        STS	132, R16
+//   79 }
+        RET
+//   80 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   81 void iso7816_init()
+iso7816_init:
+//   82 {
+//   83   TMR1_VOLATH = (124*(ORC0Ax+1)>>8);/* restore the value.;hacking for these variables continuous store*/
+        LDI	R16, 0
+        STS	TMR1_VOLATH, R16
+//   84   /* set led pin direction out */
+//   85   LED_INIT;
+        SBI	0x04, 0x05
+//   86 
+//   87   /* enable INT1 interrupt */
+//   88   EICRA_Bit3 = 1; EICRA_Bit2 = 0; /* falling edge */
+        LDS	R16, 105
+        ORI	R16, 0x08
+        STS	105, R16
+        LDS	R16, 105
+        ANDI	R16, 0xFB
+        STS	105, R16
+//   89   EIMSK_Bit1 = 1;
+        SBI	0x1D, 0x01
+//   90 
+//   91   PORTB |= (1<<C2_RESET);
+        SBI	0x05, 0x04
+//   92   PowerPinInit();
+        IN	R16, 0x07
+        ORI	R16, 0x1C
+        OUT	0x07, R16
+        CBI	0x0A, 0x06
+        CBI	0x04, 0x04
+//   93 
+//   94   /* timer1 related stuff */
+//   95   TCCR1A = 0;
+        LDI	R16, 0
+        STS	128, R16
+//   96   timer1_stop();
+        RCALL	timer1_stop
+//   97 
+//   98   /* timer0 related stuff */
+//   99   TCCR0B = 0;
+        LDI	R16, 0
+        OUT	0x25, R16
+//  100   OCR0A = ORC0Ax;
+        LDI	R16, 1
+        OUT	0x27, R16
+//  101   TCCR0A = 0x42;
+        LDI	R16, 66
+        OUT	0x24, R16
+//  102   TCCR0B = 0x01;
+        LDI	R16, 1
+        OUT	0x25, R16
+//  103 }
+        RET
+//  104 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  105 void icc_reset()
+icc_reset:
+//  106 {
+//  107   GPIOR0 = 0;
+        LDI	R16, 0
+        OUT	0x1E, R16
+//  108   PowerOn();
+        IN	R16, 0x06
+        ORI	R16, 0x1C
+        OUT	0x08, R16
+        SBI	0x0A, 0x06
+        SBI	0x04, 0x04
+//  109 
+//  110   PORTB &= ~(1<<C2_RESET);
+        CBI	0x05, 0x04
+//  111 
+//  112   load_timer1_count(14880);
+        LDI	R16, 32
+        LDI	R17, 58
+        RCALL	load_timer1_count
+//  113   TIMER_COMP_FLAG_CLR;
+        SBI	0x16, 0x01
+//  114   timer1_start();
+        RCALL	timer1_start
+//  115   WAIT_TIME_FLAG;
+??icc_reset_0:
+        SBIS	0x16, 0x01
+        RJMP	??icc_reset_0
+//  116   timer1_stop();
+        RCALL	timer1_stop
+//  117 
+//  118   load_one_etu();
+        RCALL	load_one_etu
+//  119   TIMER_COMP_FLAG_CLR;
+        SBI	0x16, 0x01
+//  120 
+//  121   PORTB |= (1<<C2_RESET);
+        SBI	0x05, 0x04
+//  122 }
+        RET
+//  123 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  124 uchar read_atr(uchar *data)
+read_atr:
+//  125 {
+        RCALL	?PROLOGUE6_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        REQUIRE	?Register_R5_is_cg_reg
+        MOVW	R27:R26, R17:R16
+//  126   unsigned char ret,tmp_len,tmpchar,	historical_len;
+//  127   unsigned char have_Check = 0;
+        LDI	R25, 0
+//  128 
+//  129   tmp_len = RESEND_TIMES;
+        LDS	R24, RESEND_TIMES
+//  130   RESEND_TIMES = 0;
+        STS	RESEND_TIMES, R25
+//  131   tmpchar = GetChar();
+        RCALL	GetChar
+        MOV	R18, R16
+//  132   RESEND_TIMES = tmp_len;
+        STS	RESEND_TIMES, R24
+//  133   if(tmpchar == 0x03)
+        CPI	R16, 3
+        BRNE	??read_atr_0
+//  134     GPIOR0 |= (1<<REVERSE_FLAG);
+        SBI	0x1E, 0x00
+//  135   else if(tmpchar != 0x3b)
+//  136     return 0;
+//  137   ret = 2;
+??read_atr_1:
+        LDI	R16, 2
+        MOV	R4, R16
+//  138   data[0] = tmpchar;
+        ST	X, R18
+//  139   tmpchar = data[1] = GetChar();
+        RCALL	GetChar
+        MOVW	R31:R30, R27:R26
+        STD	Z+1, R16
+        MOV	R18, R16
+//  140   if(GPIOR0 & (1<<REVERSE_FLAG))
+        SBIS	0x1E, 0x00
+        RJMP	??read_atr_2
+//  141     tmpchar = ReverseByte(tmpchar);
+        RCALL	ReverseByte
+        MOV	R18, R16
+//  142   historical_len = (tmpchar & 0xf);
+??read_atr_2:
+        MOV	R5, R18
+        LDI	R16, 15
+        AND	R5, R16
+        RJMP	??read_atr_3
+??read_atr_0:
+        CPI	R16, 59
+        BREQ	??read_atr_1
+        LDI	R16, 0
+        RJMP	??read_atr_4
+//  143   while(tmpchar & 0x80)
+//  144   {
+//  145     tmp_len = ((tmpchar >> 4) & 1) + ((tmpchar >> 5) & 1) + ((tmpchar >> 6) & 1) + ((tmpchar >> 7) & 1);
+??read_atr_5:
+        RCALL	?Subroutine0
+??CrossCallReturnLabel_0:
+        MOV	R19, R18
+        BST	R19, 6
+        LDI	R19, 0
+        BLD	R19, 0
+        ADD	R19, R20
+        MOV	R24, R18
+        LSL	R24
+        LDI	R24, 0
+        ROL	R24
+        ADD	R24, R19
+//  146     iso7816_getbytes(&(data[ret]),tmp_len);
+        MOV	R18, R24
+        RCALL	??iso7816_getbytes
+//  147     ret += tmp_len;
+        ADD	R4, R24
+//  148     tmpchar = data[ret-1];//must be TDi
+        LDI	R17, 0
+        MOVW	R31:R30, R27:R26
+        ADD	R30, R4
+        ADC	R31, R17
+        LD	R18, -Z
+//  149     if(GPIOR0 & (1<<REVERSE_FLAG))
+        SBIS	0x1E, 0x00
+        RJMP	??read_atr_6
+//  150       tmpchar = ReverseByte(tmpchar);
+        MOV	R16, R18
+        RCALL	ReverseByte
+        MOV	R18, R16
+//  151     if(tmpchar&0xf)
+??read_atr_6:
+        MOV	R16, R18
+        ANDI	R16, 0x0F
+        BREQ	??read_atr_3
+//  152       have_Check = 1;
+        LDI	R25, 1
+//  153   }
+??read_atr_3:
+        LDI	R21, 0
+        MOVW	R17:R16, R27:R26
+        ADD	R16, R4
+        ADC	R17, R21
+        BST	R18, 7
+        MOV	R19, R18
+        BRTS	??read_atr_5
+//  154   tmp_len = ((tmpchar >> 4) & 1) + ((tmpchar >> 5) & 1) + ((tmpchar >> 6) & 1) + historical_len + have_Check;
+        RCALL	?Subroutine0
+??CrossCallReturnLabel_1:
+        MOV	R24, R18
+        BST	R24, 6
+        LDI	R24, 0
+        BLD	R24, 0
+        ADD	R24, R20
+        ADD	R24, R5
+        ADD	R24, R25
+//  155   iso7816_getbytes(&(data[ret]),tmp_len);
+        MOV	R18, R24
+        RCALL	??iso7816_getbytes
+//  156   return ret + tmp_len;
+        ADD	R24, R4
+        MOV	R16, R24
+??read_atr_4:
+        REQUIRE ?Subroutine8
+        ;		// Fall through to label ?Subroutine8
+//  157 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine8:
+        LDI	R30, 6
+        RJMP	?EPILOGUE_B6_L09
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+        BST	R19, 4
+        LDI	R19, 0
+        BLD	R19, 0
+        MOV	R20, R18
+        BST	R20, 5
+        LDI	R20, 0
+        BLD	R20, 0
+        ADD	R20, R19
+        RET
+//  158 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  159 uchar skipProcedureNull()
+skipProcedureNull:
+//  160 {
+        ST	-Y, R24
+//  161   uchar proc;
+//  162   uchar nullbyte;
+//  163 
+//  164   if(GPIOR0 & (1<<REVERSE_FLAG))
+        SBIS	0x1E, 0x00
+        RJMP	??skipProcedureNull_0
+//  165     nullbyte = 0xf9;
+        LDI	R24, 249
+        RJMP	??skipProcedureNull_1
+//  166   else
+//  167     nullbyte = 0x60;
+??skipProcedureNull_0:
+        LDI	R24, 96
+//  168   do{
+//  169     proc = GetChar();
+??skipProcedureNull_1:
+        RCALL	GetChar
+//  170   }while(proc == nullbyte);
+        CP	R16, R24
+        BREQ	??skipProcedureNull_1
+//  171   return proc;
+        LD	R24, Y+
+        RET
+//  172 }
+//  173 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  174 int t0_tpdu(uchar *cmd_apdu, uint cmd_len, uchar *res_apdu)
+t0_tpdu:
+//  175 {
+        RCALL	?PROLOGUE6_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        REQUIRE	?Register_R5_is_cg_reg
+        MOVW	R27:R26, R17:R16
+        MOVW	R25:R24, R19:R18
+        MOVW	R5:R4, R21:R20
+//  176   uchar proc;
+//  177   if(*cmd_apdu == 0xff)/* is PTS*/
+        LD	R16, X
+        CPI	R16, 255
+        BRNE	??t0_tpdu_0
+//  178   {
+//  179     if(iso7816_sendbytes(cmd_apdu,cmd_len,0))
+        LDI	R19, 0
+        RCALL	??Subroutine2_0
+??CrossCallReturnLabel_12:
+        BREQ	$+2+2
+        RJMP	??t0_tpdu_1
+//  180      goto error_end;
+//  181     if(iso7816_getbytes(res_apdu,cmd_len))
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_14:
+        BREQ	$+2+2
+        RJMP	??t0_tpdu_1
+//  182      goto error_end;
+//  183     return cmd_len;
+        MOVW	R17:R16, R25:R24
+        RJMP	??t0_tpdu_2
+//  184   }else if(cmd_len == 5)/* read data from smart card */
+??t0_tpdu_0:
+        CPI	R18, 5
+        LDI	R16, 0
+        CPC	R25, R16
+        BRNE	??t0_tpdu_3
+//  185   {
+//  186     if(iso7816_sendbytes(cmd_apdu,5,0))
+        RCALL	?Subroutine2
+??CrossCallReturnLabel_10:
+        BREQ	$+2+2
+        RJMP	??t0_tpdu_1
+//  187      goto error_end;
+//  188     proc = skipProcedureNull();
+        RCALL	skipProcedureNull
+//  189     if( (proc == cmd_apdu[1])
+//  190         || (proc == (cmd_apdu[1]+1))
+//  191         || (proc == (uchar)~cmd_apdu[1])
+//  192         || (proc == (uchar)~(cmd_apdu[1]+1)) )
+        MOVW	R31:R30, R27:R26
+        LDD	R17, Z+1
+        CP	R16, R17
+        BREQ	??t0_tpdu_4
+        RCALL	?Subroutine1
+??CrossCallReturnLabel_2:
+        BREQ	??t0_tpdu_4
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_7:
+        BREQ	??t0_tpdu_4
+        RCALL	?Subroutine3
+??CrossCallReturnLabel_4:
+        BRNE	??t0_tpdu_5
+//  193     {
+//  194         uchar res_len = cmd_apdu[4];
+??t0_tpdu_4:
+        LDD	R24, Z+4
+//  195         if(GPIOR0 & (1<<REVERSE_FLAG))
+        SBIS	0x1E, 0x00
+        RJMP	??t0_tpdu_6
+//  196           res_len = ReverseByte(res_len);
+        MOV	R16, R24
+        RCALL	ReverseByte
+        MOV	R24, R16
+//  197         res_len+=2;
+??t0_tpdu_6:
+        SUBI	R24, 254
+//  198         if(iso7816_getbytes(res_apdu,res_len))
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_15:
+        BRNE	??t0_tpdu_1
+//  199           goto error_end;
+//  200         return res_len;
+        MOV	R16, R24
+        RJMP	??t0_tpdu_7
+//  201     }else{/* is SW1 */
+//  202       res_apdu[0] = proc;
+??t0_tpdu_5:
+        MOVW	R31:R30, R5:R4
+        ST	Z, R16
+//  203       res_apdu[1] = GetChar();
+        RCALL	GetChar
+        MOVW	R31:R30, R5:R4
+        STD	Z+1, R16
+//  204       return 2;
+        LDI	R16, 2
+        RJMP	??t0_tpdu_7
+//  205     }
+//  206   }else if(cmd_len > 5)/* write data to smart card */
+??t0_tpdu_3:
+        CPI	R18, 6
+        SBCI	R25, 0
+        BRCS	??t0_tpdu_1
+//  207   {
+//  208       if(iso7816_sendbytes(cmd_apdu,5,0))
+        RCALL	?Subroutine2
+??CrossCallReturnLabel_11:
+        BRNE	??t0_tpdu_1
+//  209         goto error_end;
+//  210       proc = skipProcedureNull();
+        RCALL	skipProcedureNull
+//  211       if(proc == (uchar)~cmd_apdu[1]
+//  212          || proc == (uchar)~(cmd_apdu[1]+1)
+//  213          || proc == cmd_apdu[1]
+//  214          || proc == (cmd_apdu[1]+1))
+        MOVW	R31:R30, R27:R26
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_8:
+        BREQ	??t0_tpdu_8
+        RCALL	?Subroutine3
+??CrossCallReturnLabel_5:
+        BREQ	??t0_tpdu_8
+        LDD	R17, Z+1
+        CP	R16, R17
+        BREQ	??t0_tpdu_8
+        RCALL	?Subroutine1
+??CrossCallReturnLabel_3:
+        BRNE	??t0_tpdu_5
+//  215       {
+//  216         if(proc == (uchar)~cmd_apdu[1] || proc == (uchar)~(cmd_apdu[1]+1))
+??t0_tpdu_8:
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_9:
+        BREQ	??t0_tpdu_9
+        RCALL	?Subroutine3
+??CrossCallReturnLabel_6:
+        BRNE	??t0_tpdu_10
+//  217         {
+//  218           /* Next data byte is transferred subsequently */
+//  219           GPIOR0 |= (1<<ONE_BY_ONE_FLAG);
+??t0_tpdu_9:
+        SBI	0x1E, 0x01
+        RJMP	??t0_tpdu_11
+//  220         }else
+//  221         {/* All remaining data bytes are transferred subsequently */
+//  222           GPIOR0 &= ~(1<<ONE_BY_ONE_FLAG);
+??t0_tpdu_10:
+        CBI	0x1E, 0x01
+//  223         }
+//  224         uchar data_len = cmd_apdu[4];
+??t0_tpdu_11:
+        LDD	R18, Z+4
+//  225         if(GPIOR0 & (1<<REVERSE_FLAG))
+        SBIS	0x1E, 0x00
+        RJMP	??t0_tpdu_12
+//  226           data_len = ReverseByte(data_len);
+        MOV	R16, R18
+        RCALL	ReverseByte
+        MOV	R18, R16
+//  227         if(iso7816_sendbytes(cmd_apdu+5,data_len,cmd_apdu[1]))
+??t0_tpdu_12:
+        MOVW	R31:R30, R27:R26
+        LDD	R19, Z+1
+        ADIW	R27:R26, 5
+        RCALL	??Subroutine2_0
+??CrossCallReturnLabel_13:
+        BRNE	??t0_tpdu_1
+//  228           goto error_end;
+//  229         /* Get Status Word */
+//  230         proc = skipProcedureNull();
+//  231         res_apdu[0] = proc;
+        RCALL	skipProcedureNull
+        RJMP	??t0_tpdu_5
+//  232         res_apdu[1] = GetChar();
+//  233         return 2;
+//  234       }else{/* is SW1 */
+//  235         res_apdu[0] = proc;
+//  236         res_apdu[1] = GetChar();
+//  237         return 2;
+//  238     }
+//  239   }
+//  240 error_end:
+//  241   return 0;
+??t0_tpdu_1:
+        LDI	R16, 0
+??t0_tpdu_7:
+        LDI	R17, 0
+??t0_tpdu_2:
+        RJMP	?Subroutine8
+//  242 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine5:
+        MOV	R18, R24
+        MOVW	R17:R16, R5:R4
+        RCALL	??iso7816_getbytes
+        REQUIRE ?Subroutine7
+        ;		// Fall through to label ?Subroutine7
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine7:
+        TST	R16
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine4:
+        LDD	R17, Z+1
+        REQUIRE ?Subroutine6
+        ;		// Fall through to label ?Subroutine6
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine6:
+        COM	R17
+        CP	R16, R17
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine3:
+        LDD	R17, Z+1
+        INC	R17
+        RJMP	?Subroutine6
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine2:
+        LDI	R19, 0
+        LDI	R18, 5
+??Subroutine2_0:
+        MOVW	R17:R16, R27:R26
+        RCALL	??iso7816_sendbytes
+        RJMP	?Subroutine7
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        LDI	R17, 0
+        LDD	R24, Z+1
+        LDI	R25, 0
+        ADIW	R25:R24, 1
+        CP	R16, R24
+        CPC	R17, R25
+        RET
+//  243 
+//  244 
+//  245 #pragma vector=INT1_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  246 __interrupt void INT1Handler(void)
+INT1Handler:
+//  247 {
+        ST	-Y, R17
+        ST	-Y, R16
+        IN	R17, 0x3F
+//  248   PowerOff();
+        CBI	0x0A, 0x06
+        CBI	0x04, 0x04
+        IN	R16, 0x06
+        ANDI	R16, 0xE3
+        OUT	0x08, R16
+//  249   LED_OFF;
+        CBI	0x05, 0x05
+//  250 }
+        OUT	0x3F, R17
+        LD	R16, Y+
+        LD	R17, Y+
+        RETI
+//  251 
+//  252 #include <string.h>
+//  253 uchar GEM12_atr[22] = {0x3B,0x9F,0x95,0x80,0x1F,0xC3,0x80,0x31,0xE0,0x73,0xFE,
+//  254                         0x21,0x1B,0xB3,0xE2,0x01,0x74,0x83,0x0F,0x90,0x00,0x88};
+//  255 uchar cmd_select_mf[] = {0xa0,0xa4,0x00,0x00,0x02,0x3f,0x00};
+//  256 uchar cmd_get_res[] = {0xa0,0xc0,0x00,0x00,0x16};
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_Z>`
+//  257 uchar atr[33];
+atr:
+        DS 33
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//  258 uchar ret_atr;
+ret_atr:
+        DS 1
+        REQUIRE `?<Initializer for ret_atr>`
+GEM12_atr:
+        DS 22
+        REQUIRE `?<Initializer for GEM12_atr>`
+cmd_select_mf:
+        DS 7
+        REQUIRE `?<Initializer for cmd_select_mf>`
+cmd_get_res:
+        DS 5
+        REQUIRE `?<Initializer for cmd_get_res>`
+//  259 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  260 char test_iso7816()
+test_iso7816:
+//  261 {
+//  262   char ret;
+//  263   iso7816_init();
+        RCALL	iso7816_init
+//  264   icc_reset();
+        RCALL	icc_reset
+//  265   ret_atr = read_atr(atr);
+        LDI	R16, LOW(atr)
+        LDI	R17, (atr) >> 8
+        RCALL	read_atr
+        STS	ret_atr, R16
+//  266   ret = memcmp(atr,GEM12_atr,22);
+        LDI	R20, 22
+        LDI	R21, 0
+        LDI	R18, LOW((ret_atr + 1))
+        LDI	R19, (ret_atr + 1) >> 8
+        LDI	R16, LOW(atr)
+        LDI	R17, (atr) >> 8
+        RCALL	memcmp
+//  267   if(ret)
+        TST	R16
+        BRNE	??test_iso7816_0
+//  268     return ret;
+//  269   if(t0_tpdu(cmd_select_mf,7,atr) == 0)
+        LDI	R20, LOW(atr)
+        LDI	R21, (atr) >> 8
+        LDI	R18, 7
+        LDI	R19, 0
+        LDI	R16, LOW((ret_atr + 23))
+        LDI	R17, (ret_atr + 23) >> 8
+        RCALL	t0_tpdu
+        OR	R16, R17
+        BRNE	??test_iso7816_1
+//  270     return (char)-1;
+??test_iso7816_2:
+        LDI	R16, 255
+        RET
+//  271   if(atr[0] != 0x9f || atr[1] != 0x16)
+??test_iso7816_1:
+        LDS	R16, atr
+        CPI	R16, 159
+        BRNE	??test_iso7816_2
+        LDS	R16, (atr + 1)
+        CPI	R16, 22
+        BRNE	??test_iso7816_2
+//  272     return (char)-1;
+//  273   if(t0_tpdu(cmd_get_res,5,atr) != 0x18)
+        LDI	R20, LOW(atr)
+        LDI	R21, (atr) >> 8
+        LDI	R18, 5
+        LDI	R19, 0
+        LDI	R16, LOW((ret_atr + 30))
+        LDI	R17, (ret_atr + 30) >> 8
+        RCALL	t0_tpdu
+        CPI	R16, 24
+        LDI	R16, 0
+        SBCI	R17, 0
+        BRNE	??test_iso7816_2
+//  274     return (char)-1;
+//  275   return 0;
+??test_iso7816_0:
+        RET
+//  276 }
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 4
+`??INTVEC 4`:
+        RJMP	INT1Handler
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for OCR0Ax_FREQUENCY>`:
+        DB 1
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_I>`:
+        DW	SFE(NEAR_I) - SFB(NEAR_I)
+        DW	SFB(NEAR_I)
+        DW	SFB(NEAR_ID)
+        REQUIRE ?need_segment_init
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TIMEOUT_COUNTE>`:
+        DB 100
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TIMEOUT_COUNTL>`:
+        DB 96
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TIMEOUT_COUNTH>`:
+        DB 234
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for RESEND_TIMES>`:
+        DB 2
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TMR1_VOLATL>`:
+        DB 248
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TMR1_VOLATH>`:
+        DB 1
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TMR1_0P5ETUL>`:
+        DB 232
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TMR1_0P5ETUH>`:
+        DB 2
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TMR1_1P0ETUL>`:
+        DB 208
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for TMR1_1P0ETUH>`:
+        DB 5
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for ERROR_CODE>`:
+        DB 1
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_Z>`:
+        DW	SFE(NEAR_Z) - SFB(NEAR_Z)
+        DW	SFB(NEAR_Z)
+        DW	0
+        REQUIRE ?need_segment_init
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for ret_atr>`:
+        DB 0
+`?<Initializer for GEM12_atr>`:
+        DB 59, 159, 149, 128, 31, 195, 128, 49, 224, 115, 254, 33, 27, 179, 226
+        DB 1, 116, 131, 15, 144, 0, 136
+`?<Initializer for cmd_select_mf>`:
+        DB 160, 164, 0, 0, 2, 63, 0
+`?<Initializer for cmd_get_res>`:
+        DB 160, 192, 0, 0, 22
+
+        ASEGN ABSOLUTE:DATA:NOROOT,084H
+// union <unnamed> volatile __io _A_TCNT1
+_A_TCNT1:
+        DS 2
+
+        ASEGN ABSOLUTE:DATA:NOROOT,080H
+// union <unnamed> volatile __io _A_TCCR1A
+_A_TCCR1A:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,069H
+// union <unnamed> volatile __io _A_EICRA
+_A_EICRA:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,047H
+// union <unnamed> volatile __io _A_OCR0A
+_A_OCR0A:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,045H
+// union <unnamed> volatile __io _A_TCCR0B
+_A_TCCR0B:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,044H
+// union <unnamed> volatile __io _A_TCCR0A
+_A_TCCR0A:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03eH
+// union <unnamed> volatile __io _A_GPIOR0
+_A_GPIOR0:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03dH
+// union <unnamed> volatile __io _A_EIMSK
+_A_EIMSK:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,036H
+// union <unnamed> volatile __io _A_TIFR1
+_A_TIFR1:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02aH
+// union <unnamed> volatile __io _A_DDRD
+_A_DDRD:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,028H
+// union <unnamed> volatile __io _A_PORTC
+_A_PORTC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,027H
+// union <unnamed> volatile __io _A_DDRC
+_A_DDRC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,026H
+// union <unnamed> volatile __io _A_PINC
+_A_PINC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,025H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,024H
+// union <unnamed> volatile __io _A_DDRB
+_A_DDRB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,020H
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,021H
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,022H
+__?EEARH:
+
+        END
+//  277 
+//  278 
+//  279 
+//  280 
+//  281 
+//  282 
+//  283 
+//  284 
+// 
+//  16 bytes in segment ABSOLUTE
+// 758 bytes in segment CODE
+//  12 bytes in segment INITTAB
+//   2 bytes in segment INTVEC
+//  47 bytes in segment NEAR_I
+//  47 bytes in segment NEAR_ID
+//  34 bytes in segment NEAR_Z
+// 
+// 805 bytes of CODE memory (+ 14 bytes shared)
+//  81 bytes of DATA memory (+ 16 bytes shared)
+//
+//Errors: none
+//Warnings: none

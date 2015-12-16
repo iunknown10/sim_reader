@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<Project>
+  <Desktop>
+    <Static>
+      <Workspace>
+        <ColumnWidths>
+          
+          
+          
+          
+        <Column0>119</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+      </Workspace>
+      <Disassembly>
+        
+        
+        
+      <MixedMode>1</MixedMode><CodeCovEnabled>0</CodeCovEnabled><CodeCovShow>0</CodeCovShow></Disassembly>
+      <Debug-Log/>
+      <Build>
+        
+        
+        
+        
+      <ColumnWidth0>20</ColumnWidth0><ColumnWidth1>723</ColumnWidth1><ColumnWidth2>193</ColumnWidth2><ColumnWidth3>48</ColumnWidth3></Build>
+    <Watch><Format><struct_types/><watch_formats/></Format></Watch><QuickWatch><Column0>100</Column0><Column1>100</Column1><Column2>100</Column2><Column3>100</Column3></QuickWatch></Static>
+    <Windows>
+      
+      
+      
+    <Wnd0>
+        <Tabs>
+          <Tab>
+            <Identity>TabID-6412-3688</Identity>
+            <TabName>Workspace</TabName>
+            <Factory>Workspace</Factory>
+            <Session>
+              
+            <NodeDict><ExpandedNode>scr_aka</ExpandedNode></NodeDict></Session>
+          </Tab>
+        </Tabs>
+        
+      <SelectedTab>0</SelectedTab></Wnd0><Wnd3>
+        <Tabs>
+          <Tab>
+            <Identity>TabID-17160-3691</Identity>
+            <TabName>Disassembly</TabName>
+            <Factory>Disassembly</Factory>
+            <Session/>
+          </Tab>
+        </Tabs>
+        
+      <SelectedTab>0</SelectedTab></Wnd3><Wnd4>
+        <Tabs>
+          <Tab>
+            <Identity>TabID-27909-3694</Identity>
+            <TabName>Debug Log</TabName>
+            <Factory>Debug-Log</Factory>
+            <Session/>
+          </Tab>
+          <Tab>
+            <Identity>TabID-5889-3698</Identity>
+            <TabName>Build</TabName>
+            <Factory>Build</Factory>
+            <Session/>
+          </Tab>
+        </Tabs>
+        
+      <SelectedTab>1</SelectedTab></Wnd4><Wnd5><Tabs><Tab><Identity>TabID-25854-21571</Identity><TabName>Quick Watch</TabName><Factory>QuickWatch</Factory><Session><Expression>RAND</Expression></Session></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd5></Windows>
+    <Editor>
+      
+      
+      
+      
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\scr\iso7816.h</Filename><XPos>0</XPos><YPos>47</YPos><SelStart>1437</SelStart><SelEnd>1655</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c</Filename><XPos>0</XPos><YPos>23</YPos><SelStart>738</SelStart><SelEnd>759</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\scr\iso7816.c</Filename><XPos>0</XPos><YPos>254</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.h</Filename><XPos>0</XPos><YPos>6</YPos><SelStart>177</SelStart><SelEnd>177</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\aka.c</Filename><XPos>0</XPos><YPos>256</YPos><SelStart>9628</SelStart><SelEnd>9628</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\sha.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\usbdrv\usbdrv.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\iccd\iccd.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>404</SelStart><SelEnd>404</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sha_based_aka.c</Filename><XPos>0</XPos><YPos>22</YPos><SelStart>838</SelStart><SelEnd>838</SelEnd></Tab><ActiveTab>8</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\aka.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>605</SelStart><SelEnd>611</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\sha.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>62</SelStart><SelEnd>62</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>E:\yanglq\projects\agsm\firmware_ed11\main.c</Filename><XPos>0</XPos><YPos>54</YPos><SelStart>1227</SelStart><SelEnd>1227</SelEnd></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Positions>
+      
+      
+      
+      
+      
+    <Top><Row0><Sizes><Toolbar-003be948><key>iaridepm1</key></Toolbar-003be948></Sizes></Row0><Row1><Sizes><Toolbar-02add820><key>debuggergui1</key></Toolbar-02add820></Sizes></Row1></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>426</Bottom><Right>193</Right><x>-2</x><y>-2</y><xscreen>195</xscreen><yscreen>195</yscreen><sizeHorzCX>190429</sizeHorzCX><sizeHorzCY>283430</sizeHorzCY><sizeVertCX>190429</sizeVertCX><sizeVertCY>622093</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>426</Bottom><Right>193</Right><x>-2</x><y>-2</y><xscreen>195</xscreen><yscreen>195</yscreen><sizeHorzCX>190429</sizeHorzCX><sizeHorzCY>283430</sizeHorzCY><sizeVertCX>190429</sizeVertCX><sizeVertCY>622093</sizeVertCY></Rect></Wnd3></Sizes></Row0><Row1><Sizes><Wnd5><Rect><Top>-2</Top><Left>191</Left><Bottom>426</Bottom><Right>389</Right><x>191</x><y>-2</y><xscreen>198</xscreen><yscreen>198</yscreen><sizeHorzCX>193359</sizeHorzCX><sizeHorzCY>287790</sizeHorzCY><sizeVertCX>193359</sizeVertCX><sizeVertCY>622093</sizeVertCY></Rect></Wnd5></Sizes></Row1></Right><Bottom><Row0><Sizes><Wnd4><Rect><Top>-2</Top><Left>-2</Left><Bottom>193</Bottom><Right>1026</Right><x>-2</x><y>-2</y><xscreen>1028</xscreen><yscreen>195</yscreen><sizeHorzCX>1003906</sizeHorzCX><sizeHorzCY>283430</sizeHorzCY><sizeVertCX>190429</sizeVertCX><sizeVertCY>283430</sizeVertCY></Rect></Wnd4></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+  </Desktop>
+</Project>
+
+

@@ -1,0 +1,1589 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+//                                                     30/Oct/2005  13:40:10 /
+// IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version               /
+// Copyright 1996-2005 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\sha.c   /
+//    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11 /
+//                    \Release\Obj\ -D NDEBUG -lCN                           /
+//                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\    /
+//                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List /
+//                    \ --initializers_in_flash -z9 --cross_call_passes=2    /
+//                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR   /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\" -I "E:\Program Files\IAR             /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\CLIB\" --eeprom_size 512               /
+//                    E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\sha.c   /
+//    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\sha /
+//                    .s90                                                   /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME sha
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?C_SHL_L01
+        EXTERN ?EPILOGUE_B12_L09
+        EXTERN ?EPILOGUE_B16_L09
+        EXTERN ?EPILOGUE_B4_L09
+        EXTERN ?EPILOGUE_B6_L09
+        EXTERN ?L_SHL_L03
+        EXTERN ?PROLOGUE12_L09
+        EXTERN ?PROLOGUE16_L09
+        EXTERN ?PROLOGUE4_L09
+        EXTERN ?PROLOGUE6_L09
+        EXTERN ?Register_R10_is_cg_reg
+        EXTERN ?Register_R11_is_cg_reg
+        EXTERN ?Register_R12_is_cg_reg
+        EXTERN ?Register_R13_is_cg_reg
+        EXTERN ?Register_R14_is_cg_reg
+        EXTERN ?Register_R15_is_cg_reg
+        EXTERN ?Register_R4_is_cg_reg
+        EXTERN ?Register_R5_is_cg_reg
+        EXTERN ?Register_R6_is_cg_reg
+        EXTERN ?Register_R7_is_cg_reg
+        EXTERN ?Register_R8_is_cg_reg
+        EXTERN ?Register_R9_is_cg_reg
+        EXTERN ?SS_SHR_L02
+        EXTERN ?UC_SHR_L01
+        EXTERN ?UL_SHR_L03
+        EXTERN ?US_SHR_L02
+        EXTERN ?need_segment_init
+
+        PUBWEAK `?<Segment init: NEAR_I>`
+        PUBWEAK `?<Segment init: NEAR_Z>`
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC shaFinal
+        PUBLIC shaInitial
+        PUBLIC shaUpdate
+
+// E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\sha.c
+//    1 /* "sha.c" */
+//    2 
+//    3 #include "sha.h"
+//    4 
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_Z>`
+//    5 static unsigned long A, B, C, D, E;
+??A:
+        DS 4
+        DS 4
+        DS 4
+        DS 4
+        DS 4
+//    6 
+//    7 #define K1	0x5a827999
+//    8 #define K2	0x6ed9eba1
+//    9 #define K3	0x8f1bbcdc
+//   10 #define K4	0xca62c1d6
+//   11 
+//   12 #define S(a,n) ((a << n) | (a >> (32-n)))
+//   13 
+//   14 static
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   15 unsigned char SHA_IV[20] = { 0x67, 0x45, 0x23, 0x01, 0xef, 0xcd, 0xab, 0x89,
+??SHA_IV:
+        DS 20
+        REQUIRE `?<Initializer for SHA_IV>`
+//   16 							 0x98, 0xba, 0xdc, 0xfe, 0x10, 0x32, 0x54, 0x76,
+//   17 							 0xc3, 0xd2, 0xe1, 0xf0 };
+//   18 
+//   19 /* SHA ft(B,C,D) + Kt */
+//   20 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   21 static unsigned long ftk(int t)
+??ftk:
+//   22 {
+        RCALL	?PROLOGUE6_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        REQUIRE	?Register_R5_is_cg_reg
+        MOVW	R5:R4, R17:R16
+//   23 	if (t < 20)
+        LDI	R30, LOW(??A)
+        LDI	R31, (??A) >> 8
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_9:
+        LDD	R0, Z+8
+        LDD	R1, Z+9
+        LDD	R2, Z+10
+        LDD	R3, Z+11
+        LDD	R24, Z+4
+        LDD	R25, Z+5
+        LDD	R26, Z+6
+        LDD	R27, Z+7
+        LDI	R16, 20
+        CP	R4, R16
+        LDI	R16, 0
+        CPC	R5, R16
+        BRGE	??ftk_1
+//   24 		return( ((B & C) | (~B & D)) + K1 );
+        AND	R0, R24
+        AND	R1, R25
+        AND	R2, R26
+        AND	R3, R27
+        COM	R24
+        COM	R25
+        COM	R26
+        COM	R27
+        AND	R24, R20
+        AND	R25, R21
+        AND	R26, R22
+        AND	R27, R23
+        OR	R24, R0
+        OR	R25, R1
+        OR	R26, R2
+        OR	R27, R3
+        SUBI	R24, 103
+        SBCI	R25, 134
+        SBCI	R26, 125
+        SBCI	R27, 165
+        MOVW	R17:R16, R25:R24
+        MOVW	R19:R18, R27:R26
+        RJMP	??ftk_2
+//   25 	else if (t < 40)
+??ftk_1:
+        MOVW	R17:R16, R1:R0
+        MOVW	R19:R18, R3:R2
+        EOR	R16, R24
+        EOR	R17, R25
+        EOR	R18, R26
+        EOR	R19, R27
+        EOR	R16, R20
+        EOR	R17, R21
+        EOR	R18, R22
+        EOR	R19, R23
+        LDI	R30, 40
+        CP	R4, R30
+        LDI	R30, 0
+        CPC	R5, R30
+        BRGE	??ftk_3
+//   26 		return( (B ^ C ^ D) + K2 );
+        SUBI	R16, 95
+        SBCI	R17, 20
+        SBCI	R18, 38
+        SBCI	R19, 145
+        RJMP	??ftk_2
+//   27 	else if (t < 60)
+??ftk_3:
+        LDI	R30, 60
+        CP	R4, R30
+        LDI	R30, 0
+        CPC	R5, R30
+        BRGE	??ftk_4
+//   28 		return( ((B & C) | (B & D) | (C & D)) + K3 );
+        MOVW	R17:R16, R21:R20
+        MOVW	R19:R18, R23:R22
+        OR	R16, R0
+        OR	R17, R1
+        OR	R18, R2
+        OR	R19, R3
+        AND	R16, R24
+        AND	R17, R25
+        AND	R18, R26
+        AND	R19, R27
+        AND	R20, R0
+        AND	R21, R1
+        AND	R22, R2
+        AND	R23, R3
+        OR	R20, R16
+        OR	R21, R17
+        OR	R22, R18
+        OR	R23, R19
+        SUBI	R20, 36
+        SBCI	R21, 67
+        SBCI	R22, 228
+        SBCI	R23, 112
+        MOVW	R17:R16, R21:R20
+        MOVW	R19:R18, R23:R22
+        RJMP	??ftk_2
+//   29 	else
+//   30 		return( (B ^ C ^ D) + K4 );
+??ftk_4:
+        SUBI	R16, 42
+        SBCI	R17, 62
+        SBCI	R18, 157
+        SBCI	R19, 53
+??ftk_2:
+        LDI	R30, 6
+        RJMP	?EPILOGUE_B6_L09
+//   31 }
+//   32 
+//   33 /* the 80 rounds of SHA */
+//   34 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   35 static
+//   36 void shaHash(SHA_INFO *sha_info)
+??shaHash:
+//   37 {
+        RCALL	?PROLOGUE12_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        REQUIRE	?Register_R5_is_cg_reg
+        REQUIRE	?Register_R6_is_cg_reg
+        REQUIRE	?Register_R7_is_cg_reg
+        REQUIRE	?Register_R8_is_cg_reg
+        REQUIRE	?Register_R9_is_cg_reg
+        REQUIRE	?Register_R10_is_cg_reg
+        REQUIRE	?Register_R11_is_cg_reg
+        SBIW	R29:R28, 63
+        SBIW	R29:R28, 21
+        MOVW	R27:R26, R17:R16
+//   38 	unsigned long t, A0, B0, C0, D0, E0, W[16];
+//   39 	int i, s;
+//   40 
+//   41 	/* set the temporary digest values from the current digest,
+//   42 	   using shifts to ensure machine-independence */
+//   43 
+//   44 	A  = (unsigned long)sha_info->digest[0] << 24;
+//   45 	A += (unsigned long)sha_info->digest[1] << 16;
+//   46 	A += (unsigned long)sha_info->digest[2] << 8;
+//   47 	A += (unsigned long)sha_info->digest[3];
+        LDI	R24, LOW(??A)
+        LDI	R25, (??A) >> 8
+        LD	R23, X
+        LDI	R22, 0
+        MOVW	R31:R30, R17:R16
+        LDD	R18, Z+1
+        LDI	R16, 0
+        ADD	R16, R22
+        LDD	R21, Z+2
+        LDD	R16, Z+3
+        MOVW	R31:R30, R25:R24
+        ST	Z, R16
+        STD	Z+1, R21
+        STD	Z+2, R18
+        STD	Z+3, R23
+//   48 	B  = (unsigned long)sha_info->digest[4] << 24;
+//   49 	B += (unsigned long)sha_info->digest[5] << 16;
+//   50 	B += (unsigned long)sha_info->digest[6] << 8;
+//   51 	B += (unsigned long)sha_info->digest[7];
+        MOVW	R31:R30, R27:R26
+        LDD	R19, Z+4
+        LDD	R22, Z+5
+        LDI	R21, 0
+        LDD	R17, Z+6
+        LDD	R8, Z+7
+        CLR	R9
+        CLR	R10
+        CLR	R11
+        ADC	R9, R17
+        ADC	R10, R22
+        ADC	R11, R19
+        MOVW	R31:R30, R25:R24
+        STD	Z+4, R8
+        STD	Z+5, R17
+        STD	Z+6, R22
+        STD	Z+7, R19
+//   52 	C  = (unsigned long)sha_info->digest[8] << 24;
+//   53 	C += (unsigned long)sha_info->digest[9] << 16;
+//   54 	C += (unsigned long)sha_info->digest[10] << 8;
+//   55 	C += (unsigned long)sha_info->digest[11];
+        MOVW	R31:R30, R27:R26
+        LDD	R19, Z+8
+        LDI	R18, 0
+        LDD	R22, Z+9
+        LDI	R23, 0
+        ADC	R23, R19
+        LDD	R17, Z+10
+        LDI	R19, 0
+        ADC	R18, R22
+        ADC	R19, R23
+        LDD	R20, Z+11
+        LDI	R22, 0
+        LDI	R23, 0
+        RCALL	??Subroutine8_0
+??CrossCallReturnLabel_16:
+        MOVW	R31:R30, R25:R24
+        STD	Z+8, R20
+        STD	Z+9, R17
+        STD	Z+10, R18
+        STD	Z+11, R19
+//   56 	D  = (unsigned long)sha_info->digest[12] << 24;
+//   57 	D += (unsigned long)sha_info->digest[13] << 16;
+//   58 	D += (unsigned long)sha_info->digest[14] << 8;
+//   59 	D += (unsigned long)sha_info->digest[15];
+        MOVW	R31:R30, R27:R26
+        LDD	R3, Z+12
+        CLR	R2
+        LDD	R18, Z+13
+        LDI	R19, 0
+        LDI	R17, 0
+        ADC	R19, R3
+        LDD	R1, Z+14
+        CLR	R3
+        ADC	R2, R18
+        ADC	R3, R19
+        LDD	R16, Z+15
+        LDI	R18, 0
+        LDI	R19, 0
+        ADC	R17, R1
+        ADC	R18, R2
+        ADC	R19, R3
+        MOVW	R31:R30, R25:R24
+        STD	Z+12, R16
+        STD	Z+13, R1
+        STD	Z+14, R2
+        STD	Z+15, R3
+//   60 	E  = (unsigned long)sha_info->digest[16] << 24;
+//   61 	E += (unsigned long)sha_info->digest[17] << 16;
+//   62 	E += (unsigned long)sha_info->digest[18] << 8;
+//   63 	E += (unsigned long)sha_info->digest[19];
+        MOVW	R31:R30, R27:R26
+        LDD	R3, Z+16
+        LDD	R6, Z+17
+        CLR	R7
+        ADC	R7, R3
+        MOVW	R3:R2, R7:R6
+        LDD	R1, Z+18
+        LDD	R4, Z+19
+        CLR	R5
+        ADC	R5, R1
+        MOVW	R1:R0, R5:R4
+        MOVW	R31:R30, R25:R24
+        STD	Z+16, R4
+        STD	Z+17, R5
+        STD	Z+18, R6
+        STD	Z+19, R7
+//   64 
+//   65 	/* save A-E */
+//   66 
+//   67 	A0 = A;
+        LD	R4, Z
+        LDD	R5, Z+1
+        LDD	R6, Z+2
+        LDD	R7, Z+3
+        ST	Y, R4
+        STD	Y+1, R5
+        STD	Y+2, R6
+        STD	Y+3, R7
+//   68 	B0 = B;
+        STD	Y+4, R8
+        STD	Y+5, R9
+        STD	Y+6, R10
+        STD	Y+7, R11
+//   69 	C0 = C;
+        STD	Y+8, R20
+        STD	Y+9, R21
+        STD	Y+10, R22
+        STD	Y+11, R23
+//   70 	D0 = D;
+        STD	Y+12, R16
+        STD	Y+13, R17
+        STD	Y+14, R18
+        STD	Y+15, R19
+//   71 	E0 = E;
+        STD	Y+16, R0
+        STD	Y+17, R1
+        STD	Y+18, R2
+        STD	Y+19, R3
+//   72 
+//   73 	/* move the data into the first 16 words of W */
+//   74 
+//   75 	for (i = 0; i < 16; i++)
+        CLR	R4
+        CLR	R5
+//   76 		W[i] = sha_info->data[i];
+??shaHash_1:
+        RCALL	?Subroutine11
+??CrossCallReturnLabel_28:
+        MOVW	R31:R30, R27:R26
+        ADD	R30, R20
+        ADC	R31, R21
+        LDD	R16, Z+28
+        LDD	R17, Z+29
+        LDD	R18, Z+30
+        LDD	R19, Z+31
+        MOVW	R31:R30, R29:R28
+        ADD	R30, R20
+        ADC	R31, R21
+        STD	Z+20, R16
+        STD	Z+21, R17
+        STD	Z+22, R18
+        STD	Z+23, R19
+        LDI	R16, 1
+        ADD	R4, R16
+        LDI	R16, 0
+        ADC	R5, R16
+        LDI	R16, 16
+        CP	R4, R16
+        LDI	R16, 0
+        CPC	R5, R16
+        BRLT	??shaHash_1
+//   77 
+//   78 	/* perform the 80 rounds, using the "alternate method" in which
+//   79 	   the later values of W are computed in place */
+//   80 
+//   81 	for (i = 0; i < 80; i++)
+        CLR	R4
+        CLR	R5
+//   82 	{
+//   83 		s = i & 0x0f;
+??shaHash_2:
+        LDI	R16, 15
+        MOV	R6, R16
+        CLR	R7
+        AND	R6, R4
+//   84 
+//   85 		if (i >= 16)
+        LDI	R16, 16
+        CP	R4, R16
+        CPC	R5, R7
+        BRLT	??shaHash_3
+//   86 		{
+//   87 			t = W[(i-3) & 0x0f] ^ W[(i-8) & 0x0f] ^
+//   88 				W[(i-14)&0x0f] ^ W[s];
+        MOVW	R21:R20, R29:R28
+        SUBI	R20, 236
+        SBCI	R21, 255
+        MOV	R16, R6
+        LSL	R16
+        LSL	R16
+        ADD	R20, R16
+        ADC	R21, R7
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 236
+        SBCI	R17, 255
+        MOV	R30, R4
+        SUBI	R30, 3
+        ANDI	R30, 0x0F
+        LSL	R30
+        LSL	R30
+        ADD	R16, R30
+        ADC	R17, R7
+        MOVW	R31:R30, R17:R16
+        RCALL	?Subroutine13
+??CrossCallReturnLabel_33:
+        RCALL	?Subroutine14
+??CrossCallReturnLabel_35:
+        SUBI	R16, 8
+        RCALL	?Subroutine12
+??CrossCallReturnLabel_31:
+        LD	R0, Z
+        LDD	R1, Z+1
+        LDD	R2, Z+2
+        LDD	R3, Z+3
+        EOR	R0, R8
+        EOR	R1, R9
+        EOR	R2, R10
+        EOR	R3, R11
+        RCALL	?Subroutine14
+??CrossCallReturnLabel_36:
+        SUBI	R16, 14
+        RCALL	?Subroutine12
+??CrossCallReturnLabel_32:
+        RCALL	?Subroutine15
+??CrossCallReturnLabel_37:
+        EOR	R16, R0
+        EOR	R17, R1
+        EOR	R18, R2
+        EOR	R19, R3
+        MOVW	R31:R30, R21:R20
+        RCALL	?Subroutine13
+??CrossCallReturnLabel_34:
+        EOR	R8, R16
+        EOR	R9, R17
+        EOR	R10, R18
+        EOR	R11, R19
+//   89 			W[s] = S(t,1);
+        MOVW	R17:R16, R9:R8
+        MOVW	R19:R18, R11:R10
+        LSL	R16
+        ROL	R17
+        ROL	R18
+        ROL	R19
+        CLR	R0
+        ROL	R0
+        OR	R0, R16
+        ST	Z, R0
+        STD	Z+1, R17
+        STD	Z+2, R18
+        STD	Z+3, R19
+//   90 		}
+//   91 
+//   92 		t = S(A,5) + ftk(i) + E + W[s];
+??shaHash_3:
+        MOVW	R31:R30, R25:R24
+        RCALL	?Subroutine15
+??CrossCallReturnLabel_38:
+        LDI	R20, 5
+        RCALL	?L_SHL_L03
+        LDD	R8, Z+3
+        LSR	R8
+        LSR	R8
+        LSR	R8
+        OR	R8, R16
+        MOV	R9, R17
+        MOVW	R11:R10, R19:R18
+        MOVW	R17:R16, R5:R4
+        RCALL	??ftk
+        ADD	R16, R8
+        ADC	R17, R9
+        ADC	R18, R10
+        ADC	R19, R11
+        RCALL	?Subroutine2
+??CrossCallReturnLabel_63:
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_17:
+        MOVW	R31:R30, R29:R28
+        LSL	R6
+        LSL	R6
+        ADD	R30, R6
+        ADC	R31, R7
+        LDD	R8, Z+20
+        LDD	R9, Z+21
+        LDD	R10, Z+22
+        LDD	R11, Z+23
+        ADD	R8, R20
+        ADC	R9, R21
+        ADC	R10, R22
+        ADC	R11, R23
+//   93 		E = D;
+        RCALL	?Subroutine3
+??CrossCallReturnLabel_4:
+        STD	Z+16, R16
+        STD	Z+17, R17
+        STD	Z+18, R18
+        STD	Z+19, R19
+//   94 		D = C;
+        RCALL	?Subroutine16
+??CrossCallReturnLabel_40:
+        STD	Z+12, R16
+        STD	Z+13, R17
+        STD	Z+14, R18
+        STD	Z+15, R19
+//   95 		C = S(B,30);
+        RCALL	?Subroutine17
+??CrossCallReturnLabel_42:
+        LDI	R30, 64
+        MOV	R23, R16
+        MUL	R23, R30
+        LDI	R20, 2
+        RCALL	?UL_SHR_L03
+        OR	R19, R0
+        MOVW	R31:R30, R25:R24
+        STD	Z+8, R16
+        STD	Z+9, R17
+        STD	Z+10, R18
+        STD	Z+11, R19
+//   96 		B = A;
+        RCALL	?Subroutine15
+??CrossCallReturnLabel_39:
+        STD	Z+4, R16
+        STD	Z+5, R17
+        STD	Z+6, R18
+        STD	Z+7, R19
+//   97 		A = t;
+        ST	Z, R8
+        STD	Z+1, R9
+        STD	Z+2, R10
+        STD	Z+3, R11
+//   98 	}
+        LDI	R16, 1
+        ADD	R4, R16
+        ADC	R5, R7
+        LDI	R16, 80
+        CP	R4, R16
+        CPC	R5, R7
+        BRGE	$+2+2
+        RJMP	??shaHash_2
+//   99 
+//  100 	/* add in the original values of A-E */
+//  101 
+//  102 	A += A0;
+        RCALL	?Subroutine18
+??CrossCallReturnLabel_44:
+        MOVW	R21:R20, R9:R8
+        MOVW	R23:R22, R11:R10
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_18:
+        RCALL	?Subroutine19
+//  103 	B += B0;
+??CrossCallReturnLabel_46:
+        LDD	R16, Y+4
+        LDD	R17, Y+5
+        LDD	R18, Y+6
+        LDD	R19, Y+7
+        RCALL	?Subroutine22
+??CrossCallReturnLabel_52:
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_19:
+        RCALL	?Subroutine23
+//  104 	C += C0;
+??CrossCallReturnLabel_54:
+        LDD	R16, Y+8
+        LDD	R17, Y+9
+        LDD	R18, Y+10
+        LDD	R19, Y+11
+        LDD	R20, Z+8
+        LDD	R21, Z+9
+        LDD	R22, Z+10
+        LDD	R23, Z+11
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_20:
+        STD	Z+8, R20
+        STD	Z+9, R21
+        STD	Z+10, R22
+        STD	Z+11, R23
+//  105 	D += D0;
+        LDD	R16, Y+12
+        LDD	R17, Y+13
+        LDD	R18, Y+14
+        LDD	R19, Y+15
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_10:
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_21:
+        STD	Z+12, R20
+        STD	Z+13, R21
+        STD	Z+14, R22
+        STD	Z+15, R23
+//  106 	E += E0;
+        LDD	R16, Y+16
+        LDD	R17, Y+17
+        LDD	R18, Y+18
+        LDD	R19, Y+19
+        RCALL	?Subroutine27
+??CrossCallReturnLabel_62:
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_22:
+        STD	Z+16, R20
+        STD	Z+17, R21
+        STD	Z+18, R22
+        STD	Z+19, R23
+//  107 
+//  108 	/* save resulting digest, again using shifts to ensure
+//  109 	   machine independence */
+//  110 
+//  111 	sha_info->digest[0] = (unsigned char)(A >> 24);
+        LDD	R16, Z+3
+        ST	X, R16
+//  112 	sha_info->digest[1] = (unsigned char)((A >> 16) & 0xff);
+        LDD	R16, Z+2
+        MOVW	R31:R30, R27:R26
+        STD	Z+1, R16
+//  113 	sha_info->digest[2] = (unsigned char)((A >> 8) & 0xff);
+        MOVW	R31:R30, R25:R24
+        LDD	R16, Z+1
+        MOVW	R31:R30, R27:R26
+        STD	Z+2, R16
+//  114 	sha_info->digest[3] = (unsigned char)(A & 0xff);
+        MOVW	R31:R30, R25:R24
+        LD	R16, Z
+        MOVW	R31:R30, R27:R26
+        STD	Z+3, R16
+//  115 	sha_info->digest[4] = (unsigned char)(B >> 24);
+        MOVW	R31:R30, R25:R24
+        RCALL	?Subroutine17
+??CrossCallReturnLabel_43:
+        MOVW	R31:R30, R27:R26
+        STD	Z+4, R19
+//  116 	sha_info->digest[5] = (unsigned char)((B >> 16) & 0xff);
+        STD	Z+5, R18
+//  117 	sha_info->digest[6] = (unsigned char)((B >> 8) & 0xff);
+        STD	Z+6, R17
+//  118 	sha_info->digest[7] = (unsigned char)(B & 0xff);
+        STD	Z+7, R16
+//  119 	sha_info->digest[8] = (unsigned char)(C >> 24);
+        MOVW	R31:R30, R25:R24
+        RCALL	?Subroutine16
+??CrossCallReturnLabel_41:
+        MOVW	R31:R30, R27:R26
+        STD	Z+8, R19
+//  120 	sha_info->digest[9] = (unsigned char)((C >> 16) & 0xff);
+        STD	Z+9, R18
+//  121 	sha_info->digest[10] = (unsigned char)((C >> 8) & 0xff);
+        STD	Z+10, R17
+//  122 	sha_info->digest[11] = (unsigned char)(C & 0xff);
+        STD	Z+11, R16
+//  123 	sha_info->digest[12] = (unsigned char)(D >> 24);
+        RCALL	?Subroutine3
+??CrossCallReturnLabel_5:
+        MOVW	R31:R30, R27:R26
+        STD	Z+12, R19
+//  124 	sha_info->digest[13] = (unsigned char)((D >> 16) & 0xff);
+        STD	Z+13, R18
+//  125 	sha_info->digest[14] = (unsigned char)((D >> 8) & 0xff);
+        STD	Z+14, R17
+//  126 	sha_info->digest[15] = (unsigned char)(D & 0xff);
+        STD	Z+15, R16
+//  127 	sha_info->digest[16] = (unsigned char)(E >> 24);
+        RCALL	?Subroutine2
+??CrossCallReturnLabel_64:
+        MOVW	R31:R30, R27:R26
+        STD	Z+16, R23
+//  128 	sha_info->digest[17] = (unsigned char)((E >> 16) & 0xff);
+        STD	Z+17, R22
+//  129 	sha_info->digest[18] = (unsigned char)((E >> 8) & 0xff);
+        STD	Z+18, R21
+//  130 	sha_info->digest[19] = (unsigned char)(E & 0xff);
+        STD	Z+19, R20
+//  131 
+//  132 	/* clear the data so that further updates can be added in */
+//  133 
+//  134 	for (i = 0; i < 16; i++)
+        CLR	R4
+        CLR	R5
+//  135 		sha_info->data[i] = 0;
+??shaHash_4:
+        MOVW	R31:R30, R27:R26
+        RCALL	?Subroutine11
+??CrossCallReturnLabel_29:
+        ADD	R30, R20
+        ADC	R31, R21
+        STD	Z+28, R7
+        STD	Z+29, R7
+        STD	Z+30, R7
+        STD	Z+31, R7
+        LDI	R16, 1
+        ADD	R4, R16
+        ADC	R5, R7
+        LDI	R16, 16
+        CP	R4, R16
+        CPC	R5, R7
+        BRLT	??shaHash_4
+//  136 }
+        ADIW	R29:R28, 63
+        ADIW	R29:R28, 21
+        LDI	R30, 12
+        RJMP	?EPILOGUE_B12_L09
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine17:
+        LDD	R16, Z+4
+        LDD	R17, Z+5
+        LDD	R18, Z+6
+        LDD	R19, Z+7
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine16:
+        LDD	R16, Z+8
+        LDD	R17, Z+9
+        LDD	R18, Z+10
+        LDD	R19, Z+11
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine15:
+        LD	R16, Z
+        LDD	R17, Z+1
+        LDD	R18, Z+2
+        LDD	R19, Z+3
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine14:
+        MOVW	R19:R18, R29:R28
+        SUBI	R18, 236
+        SBCI	R19, 255
+        MOV	R16, R4
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine13:
+        LD	R8, Z
+        LDD	R9, Z+1
+        LDD	R10, Z+2
+        LDD	R11, Z+3
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine12:
+        ANDI	R16, 0x0F
+        LSL	R16
+        LSL	R16
+        ADD	R18, R16
+        ADC	R19, R7
+        MOVW	R31:R30, R19:R18
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine11:
+        MOVW	R21:R20, R5:R4
+??Subroutine11_0:
+        LSL	R20
+        ROL	R21
+        LSL	R20
+        ROL	R21
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine5:
+        LDD	R20, Z+12
+        LDD	R21, Z+13
+        LDD	R22, Z+14
+        LDD	R23, Z+15
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine3:
+        MOVW	R31:R30, R25:R24
+        LDD	R16, Z+12
+        LDD	R17, Z+13
+        LDD	R18, Z+14
+        LDD	R19, Z+15
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine2:
+        MOVW	R31:R30, R25:R24
+        REQUIRE ?Subroutine27
+        ;		// Fall through to label ?Subroutine27
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine27:
+        LDD	R20, Z+16
+        LDD	R21, Z+17
+        LDD	R22, Z+18
+        LDD	R23, Z+19
+        RET
+//  137 
+//  138 /* initialize sha_info */
+//  139 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  140 void shaInitial(SHA_INFO *sha_info)
+shaInitial:
+//  141 {
+        RCALL	?PROLOGUE4_L09
+        MOVW	R31:R30, R17:R16
+//  142 	int i;
+//  143 
+//  144 	/* set digest to its initial value.  Done one char at a time
+//  145 	   to ensure machine independence. */
+//  146 
+//  147 	for (i = 0; i < 20; i++)
+        LDI	R24, 0
+        LDI	R25, 0
+//  148 		sha_info->digest[i] = SHA_IV[i];
+??shaInitial_0:
+        MOVW	R27:R26, R25:R24
+        SUBI	R26, LOW((-(??SHA_IV) & 0xFFFF))
+        SBCI	R27, (-(??SHA_IV) & 0xFFFF) >> 8
+        LD	R16, X
+        MOVW	R27:R26, R31:R30
+        ADD	R26, R24
+        ADC	R27, R25
+        ST	X, R16
+        ADIW	R25:R24, 1
+        CPI	R24, 20
+        LDI	R16, 0
+        CPC	R25, R16
+        BRLT	??shaInitial_0
+//  149 
+//  150 	/* clear data so that updates can be added in */
+//  151 
+//  152 	for (i = 0; i < 16; i++)
+        LDI	R24, 0
+        LDI	R25, 0
+//  153 		sha_info->data[i] = 0;
+??shaInitial_1:
+        MOVW	R27:R26, R31:R30
+        ADIW	R27:R26, 28
+        MOVW	R21:R20, R25:R24
+        RCALL	??Subroutine11_0
+??CrossCallReturnLabel_30:
+        ADD	R26, R20
+        ADC	R27, R21
+        ST	X+, R16
+        ST	X+, R16
+        ST	X+, R16
+        ST	X, R16
+        ADIW	R25:R24, 1
+        CPI	R24, 16
+        CPC	R25, R16
+        BRLT	??shaInitial_1
+//  154 
+//  155 	/* set bit count to zero */
+//  156 
+//  157 	sha_info->count[0] = sha_info->count[1] = 0;
+        STD	Z+24, R16
+        STD	Z+25, R16
+        STD	Z+26, R16
+        STD	Z+27, R16
+        STD	Z+20, R16
+        STD	Z+21, R16
+        STD	Z+22, R16
+        STD	Z+23, R16
+//  158 }
+        REQUIRE ?Subroutine28
+        ;		// Fall through to label ?Subroutine28
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine28:
+        LDI	R30, 4
+        RJMP	?EPILOGUE_B4_L09
+//  159 
+//  160 /* update the digest using additional message data */
+//  161 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  162 void shaUpdate(SHA_INFO *sha_info,
+shaUpdate:
+//  163 			   unsigned char *buffer,
+//  164 			   unsigned long offset,
+//  165 			   unsigned long count)
+//  166 {
+        RCALL	?PROLOGUE16_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        REQUIRE	?Register_R5_is_cg_reg
+        REQUIRE	?Register_R6_is_cg_reg
+        REQUIRE	?Register_R7_is_cg_reg
+        REQUIRE	?Register_R8_is_cg_reg
+        REQUIRE	?Register_R9_is_cg_reg
+        REQUIRE	?Register_R10_is_cg_reg
+        REQUIRE	?Register_R11_is_cg_reg
+        REQUIRE	?Register_R12_is_cg_reg
+        REQUIRE	?Register_R13_is_cg_reg
+        REQUIRE	?Register_R14_is_cg_reg
+        REQUIRE	?Register_R15_is_cg_reg
+        SBIW	R29:R28, 6
+        STD	Y+4, R18
+        STD	Y+5, R19
+        ST	Y, R20
+        STD	Y+1, R21
+        STD	Y+2, R22
+        STD	Y+3, R23
+        MOVW	R27:R26, R17:R16
+        LDD	R8, Y+22
+        LDD	R9, Y+23
+        LDD	R10, Y+24
+        LDD	R11, Y+25
+//  167 	unsigned long data_count, t, mask_size;
+//  168 	unsigned char *bptr, c, last, mask;
+//  169 
+//  170 	/* enter the message data into the data buffer.  When the buffer
+//  171 	   is full (512 bits entered, update the digest and clear the
+//  172 	   data buffer for the next update.  */
+//  173 
+//  174 	data_count = sha_info->count[1]%512;
+        MOVW	R31:R30, R17:R16
+        LDD	R0, Z+24
+        LDD	R1, Z+25
+        LDI	R16, 1
+        AND	R1, R16
+        CLR	R2
+        CLR	R3
+//  175 	bptr = buffer + (offset/8);
+        MOVW	R25:R24, R19:R18
+        MOVW	R17:R16, R21:R20
+        MOVW	R19:R18, R23:R22
+        RCALL	?Subroutine4
+//  176 
+//  177 
+//  178 	/* first fill the current octet of the buffer, so that
+//  179 	   the bit offset into the buffer is a multiple of 8 */
+//  180 	last = *bptr++;
+//  181 	if (data_count%8)
+??CrossCallReturnLabel_6:
+        MOV	R18, R0
+        ANDI	R18, 0x07
+        BRNE	$+2+2
+        RJMP	??CrossCallReturnLabel_61
+//  182 	{
+//  183 		/* get a full byte from the buffer */
+//  184 		c = last;
+        MOV	R17, R12
+//  185 		last = *bptr++;
+//  186 		if (offset%8)
+        LD	R21, Y
+        ANDI	R21, 0x07
+        BREQ	??CrossCallReturnLabel_24
+//  187 		{
+//  188 			c <<= (offset%8);
+//  189 			c += last >> (8 - (offset%8));
+        MOV	R16, R12
+        MOV	R20, R21
+        RCALL	?C_SHL_L01
+        MOV	R22, R16
+        LD	R16, Z
+        RCALL	?Subroutine9
+//  190 		}
+//  191 
+//  192 		/* set mask to fill the remaining bits of the octet */
+//  193 		mask_size = 8 - (data_count%8);
+??CrossCallReturnLabel_24:
+        LDI	R20, 8
+        LDI	R21, 0
+        LDI	R22, 0
+        LDI	R23, 0
+        MOV	R4, R0
+        LDI	R16, 7
+        AND	R4, R16
+        SUB	R20, R4
+        SBCI	R21, 0
+        SBCI	R22, 0
+        SBCI	R23, 0
+        MOVW	R5:R4, R21:R20
+        MOVW	R7:R6, R23:R22
+//  194 		mask = 0xff << (data_count%8);
+        LDI	R16, 255
+        MOV	R20, R18
+        RCALL	?C_SHL_L01
+        MOV	R20, R16
+//  195 
+//  196 		/* adjust for short count */
+//  197 		if (count < mask_size)
+        CP	R8, R4
+        CPC	R9, R21
+        CPC	R10, R22
+        CPC	R11, R23
+        BRCC	??CrossCallReturnLabel_50
+//  198 		{
+//  199 			mask <<= (mask_size-count);
+        MOV	R20, R4
+        RCALL	?Subroutine21
+//  200 			mask_size = count;
+//  201 		}
+//  202 
+//  203 		/* store the bits */
+//  204 		c = (c & mask) >> (data_count%8);
+//  205 		sha_info->data[data_count/32] += (unsigned long)c << 8*(3 - ((data_count%32)/8));
+??CrossCallReturnLabel_50:
+        AND	R20, R17
+        MOV	R16, R20
+        MOV	R20, R18
+        RCALL	?UC_SHR_L01
+        LDI	R17, 0
+        LDI	R18, 0
+        LDI	R19, 0
+        MOVW	R13:R12, R17:R16
+        RCALL	?Subroutine20
+??CrossCallReturnLabel_48:
+        MOVW	R17:R16, R13:R12
+        RCALL	?L_SHL_L03
+        MOVW	R13:R12, R17:R16
+        MOVW	R15:R14, R19:R18
+        RCALL	?Subroutine1
+??CrossCallReturnLabel_2:
+        LSL	R16
+        MOVW	R31:R30, R27:R26
+        ADD	R30, R16
+        ADC	R31, R2
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_56:
+        ADD	R16, R12
+        ADC	R17, R13
+        ADC	R18, R14
+        ADC	R19, R15
+        RCALL	?Subroutine25
+//  206 
+//  207 		/* update count */
+//  208 		t = sha_info->count[1];
+??CrossCallReturnLabel_58:
+        RCALL	?Subroutine7
+//  209 		sha_info->count[1] += mask_size;
+//  210 		if (sha_info->count[1] < t)
+//  211 			sha_info->count[0]++;
+//  212 
+//  213 		/* if the data buffer is full, update the digest */
+//  214 		data_count += mask_size;
+??CrossCallReturnLabel_14:
+        RCALL	?Subroutine0
+//  215 		if (data_count == 512)
+//  216 		{
+//  217 			shaHash(sha_info);
+//  218 			data_count = 0;
+//  219 		}
+//  220 
+//  221 		/* start over with updated offset and count */
+//  222 		offset += mask_size;
+??CrossCallReturnLabel_0:
+        RCALL	?Subroutine18
+??CrossCallReturnLabel_45:
+        ADD	R16, R4
+        ADC	R17, R5
+        ADC	R18, R6
+        ADC	R19, R7
+        ST	Y, R16
+        STD	Y+1, R17
+        STD	Y+2, R18
+        STD	Y+3, R19
+//  223 		count -= mask_size;
+        RCALL	?Subroutine26
+//  224 		bptr = buffer + (offset/8);
+??CrossCallReturnLabel_60:
+        LDD	R24, Y+4
+        LDD	R25, Y+5
+        RCALL	?Subroutine4
+//  225 		last = *bptr++;
+??CrossCallReturnLabel_7:
+        RJMP	??CrossCallReturnLabel_61
+//  226 	}
+//  227 	while (count != 0)
+//  228 	{
+//  229 		/* get the next full octet from the buffer */
+//  230 		c = last;
+??shaUpdate_0:
+        MOV	R17, R12
+//  231 		last = *bptr++;
+        RCALL	??Subroutine4_0
+//  232 		if (offset%8)
+??CrossCallReturnLabel_8:
+        LD	R21, Y
+        ANDI	R21, 0x07
+        BREQ	??CrossCallReturnLabel_25
+//  233 		{
+//  234 			c <<= (offset%8);
+//  235 			c += last >> (8 - (offset%8));
+        MOV	R16, R17
+        MOV	R20, R21
+        RCALL	?C_SHL_L01
+        MOV	R22, R16
+        MOV	R16, R12
+        RCALL	?Subroutine9
+//  236 		}
+//  237 
+//  238 		/* set mask to a full octet */
+//  239 		mask_size = 8;
+??CrossCallReturnLabel_25:
+        LDI	R16, 8
+        MOV	R4, R16
+        CLR	R5
+        CLR	R6
+        CLR	R7
+//  240 		mask = 0xff;
+        LDI	R20, 255
+//  241 
+//  242 		/* adjust for short count */
+//  243 		if (count < mask_size)
+        CP	R8, R16
+        CPC	R9, R5
+        CPC	R10, R5
+        CPC	R11, R5
+        BRCC	??CrossCallReturnLabel_51
+//  244 		{
+//  245 			mask <<= (mask_size-count);
+        LDI	R16, 255
+        LDI	R20, 8
+        RCALL	?Subroutine21
+//  246 			mask_size = count;
+//  247 		}
+//  248 
+//  249 		/* store the bits */
+//  250 		c &= mask;
+//  251 		sha_info->data[data_count/32] += (unsigned long)c << 8*(3 - ((data_count%32)/8));
+??CrossCallReturnLabel_51:
+        AND	R20, R17
+        LDI	R17, 0
+        ST	-Y, R17
+        ST	-Y, R17
+        ST	-Y, R17
+        ST	-Y, R20
+        RCALL	?Subroutine20
+??CrossCallReturnLabel_49:
+        LD	R16, Y+
+        ADIW	R29:R28, 1
+        LD	R18, Y+
+        LD	R19, Y+
+        RCALL	?L_SHL_L03
+        ST	-Y, R19
+        ST	-Y, R18
+        ST	-Y, R17
+        ST	-Y, R16
+        RCALL	?Subroutine1
+??CrossCallReturnLabel_3:
+        ROL	R17
+        LSL	R16
+        ROL	R17
+        MOVW	R31:R30, R27:R26
+        ADD	R30, R16
+        ADC	R31, R17
+        LD	R16, Y+
+        LD	R17, Y+
+        LD	R18, Y+
+        LD	R19, Y+
+        LDD	R20, Z+28
+        LDD	R21, Z+29
+        LDD	R22, Z+30
+        LDD	R23, Z+31
+        RCALL	?Subroutine8
+??CrossCallReturnLabel_23:
+        STD	Z+28, R20
+        STD	Z+29, R21
+        STD	Z+30, R22
+        STD	Z+31, R23
+//  252 
+//  253 		/* update count */
+//  254 		t = sha_info->count[1];
+        RCALL	?Subroutine7
+//  255 		sha_info->count[1] += mask_size;
+//  256 		if (sha_info->count[1] < t)
+//  257 			sha_info->count[0]++;
+//  258 
+//  259 		/* if the data buffer is full, update the digest */
+//  260 		data_count += mask_size;
+??CrossCallReturnLabel_15:
+        RCALL	?Subroutine0
+//  261 		if (data_count == 512)
+//  262 		{
+//  263                         shaHash(sha_info);
+//  264 			data_count = 0;
+//  265 		}
+//  266 
+//  267 		count -= mask_size;
+??CrossCallReturnLabel_1:
+        RCALL	?Subroutine26
+//  268 	}
+??CrossCallReturnLabel_61:
+        MOV	R16, R8
+        OR	R16, R9
+        OR	R16, R10
+        OR	R16, R11
+        BREQ	$+2+2
+        RJMP	??shaUpdate_0
+//  269 }
+        ADIW	R29:R28, 6
+        LDI	R30, 20
+        RJMP	?EPILOGUE_B16_L09
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine26:
+        SUB	R8, R4
+        SBC	R9, R5
+        SBC	R10, R6
+        SBC	R11, R7
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine21:
+        SUB	R20, R8
+        RCALL	?C_SHL_L01
+        MOV	R20, R16
+        MOVW	R5:R4, R9:R8
+        MOVW	R7:R6, R11:R10
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine20:
+        LDI	R20, 3
+        MOV	R16, R0
+        ANDI	R16, 0x1F
+        LSR	R16
+        LSR	R16
+        LSR	R16
+        SUB	R20, R16
+        LSL	R20
+        LSL	R20
+        LSL	R20
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine18:
+        LD	R16, Y
+        LDD	R17, Y+1
+        LDD	R18, Y+2
+        LDD	R19, Y+3
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine9:
+        LDI	R17, 0
+        LDI	R20, 8
+        SUB	R20, R21
+        RCALL	?SS_SHR_L02
+        MOV	R17, R16
+        ADD	R17, R22
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine8:
+        ADD	R20, R16
+??Subroutine8_0:
+        ADC	R21, R17
+        ADC	R22, R18
+        ADC	R23, R19
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine7:
+        MOVW	R31:R30, R27:R26
+        LDD	R16, Z+24
+        LDD	R17, Z+25
+        LDD	R18, Z+26
+        LDD	R19, Z+27
+        MOVW	R21:R20, R17:R16
+        MOVW	R23:R22, R19:R18
+        ADD	R20, R4
+        ADC	R21, R5
+        ADC	R22, R6
+        ADC	R23, R7
+        STD	Z+24, R20
+        STD	Z+25, R21
+        STD	Z+26, R22
+        STD	Z+27, R23
+        CP	R20, R16
+        CPC	R21, R17
+        CPC	R22, R18
+        CPC	R23, R19
+        BRCC	??Subroutine7_0
+        LDD	R16, Z+20
+        LDD	R17, Z+21
+        LDD	R18, Z+22
+        LDD	R19, Z+23
+        SUBI	R16, 255
+        SBCI	R17, 255
+        SBCI	R18, 255
+        SBCI	R19, 255
+        STD	Z+20, R16
+        STD	Z+21, R17
+        STD	Z+22, R18
+        STD	Z+23, R19
+??Subroutine7_0:
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine4:
+        LDI	R20, 3
+        RCALL	?UL_SHR_L03
+        ADD	R24, R16
+        ADC	R25, R17
+??Subroutine4_0:
+        MOVW	R31:R30, R25:R24
+        LD	R12, Z+
+        MOVW	R25:R24, R31:R30
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        MOVW	R17:R16, R1:R0
+        MOVW	R19:R18, R3:R2
+        LDI	R20, 5
+        RCALL	?UL_SHR_L03
+        LSL	R16
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+        ADD	R0, R4
+        ADC	R1, R5
+        ADC	R2, R6
+        ADC	R3, R7
+        LDI	R16, 0
+        CP	R0, R16
+        LDI	R16, 2
+        CPC	R1, R16
+        LDI	R16, 0
+        CPC	R2, R16
+        CPC	R3, R16
+        BRNE	??Subroutine0_0
+        MOVW	R17:R16, R27:R26
+        RCALL	??shaHash
+        CLR	R0
+        CLR	R1
+        CLR	R2
+        CLR	R3
+??Subroutine0_0:
+        RET
+//  270 
+//  271 /* add pad bit of '1', zero fill and bit length, then update the digest */
+//  272 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  273 void shaFinal(SHA_INFO *sha_info)
+shaFinal:
+//  274 {
+        RCALL	?PROLOGUE4_L09
+        MOVW	R25:R24, R17:R16
+//  275 	/* add the pad bit of '1' */
+//  276 
+//  277 	sha_info->data[(sha_info->count[1]%512)/32] +=
+//  278 		1L << (31 - (sha_info->count[1]%32));
+        MOVW	R27:R26, R17:R16
+        ADIW	R27:R26, 20
+        LDI	R16, 1
+        LDI	R17, 0
+        LDI	R18, 0
+        LDI	R19, 0
+        LDI	R20, 31
+        MOVW	R31:R30, R27:R26
+        LDD	R21, Z+4
+        ANDI	R21, 0x1F
+        SUB	R20, R21
+        RCALL	?L_SHL_L03
+        MOVW	R1:R0, R17:R16
+        MOVW	R3:R2, R19:R18
+        LDD	R16, Z+4
+        LDD	R17, Z+5
+        ANDI	R17, 0x01
+        LDI	R20, 5
+        RCALL	?US_SHR_L02
+        LSL	R16
+        LSL	R16
+        MOVW	R31:R30, R25:R24
+        ADD	R30, R16
+        ADC	R31, R17
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_57:
+        ADD	R16, R0
+        ADC	R17, R1
+        ADC	R18, R2
+        ADC	R19, R3
+        RCALL	?Subroutine25
+//  279 
+//  280 	/* if the data buffer is full, update the digest */
+//  281 
+//  282 	if ((sha_info->count[1]%512) == 511)
+??CrossCallReturnLabel_59:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_26:
+        CPI	R16, 255
+        SBCI	R17, 1
+        BRNE	??CrossCallReturnLabel_13
+//  283 		shaHash(sha_info);
+        RCALL	?Subroutine6
+//  284 
+//  285 	/* if there isn't room for 64 bits of bit length, leave the
+//  286 	   buffer zero filled to the end, update the digest and clear
+//  287 	   the buffer.  */
+//  288 
+//  289 	if ((sha_info->count[1]%512) > (512-65))
+??CrossCallReturnLabel_13:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_27:
+        CPI	R16, 192
+        SBCI	R17, 1
+        BRCS	??CrossCallReturnLabel_12
+//  290 		shaHash(sha_info);
+        RCALL	?Subroutine6
+//  291 
+//  292 	/* put in the bit length */
+//  293 
+//  294 	sha_info->data[14] = sha_info->count[0];
+??CrossCallReturnLabel_12:
+        MOVW	R17:R16, R25:R24
+        SUBI	R16, 172
+        SBCI	R17, 255
+        LD	R20, X+
+        LD	R21, X+
+        LD	R22, X+
+        LD	R23, X
+        SBIW	R27:R26, 3
+        MOVW	R31:R30, R17:R16
+        RCALL	?Subroutine19
+//  295 	sha_info->data[15] = sha_info->count[1];
+??CrossCallReturnLabel_47:
+        MOVW	R31:R30, R27:R26
+        RCALL	?Subroutine22
+??CrossCallReturnLabel_53:
+        MOVW	R31:R30, R17:R16
+        RCALL	?Subroutine23
+//  296 
+//  297 	/* update the digest */
+//  298 
+//  299 	shaHash(sha_info);
+??CrossCallReturnLabel_55:
+        RCALL	?Subroutine6
+//  300 }
+??CrossCallReturnLabel_11:
+        RJMP	?Subroutine28
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine25:
+        STD	Z+28, R16
+        STD	Z+29, R17
+        STD	Z+30, R18
+        STD	Z+31, R19
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine24:
+        LDD	R16, Z+28
+        LDD	R17, Z+29
+        LDD	R18, Z+30
+        LDD	R19, Z+31
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine23:
+        STD	Z+4, R20
+        STD	Z+5, R21
+        STD	Z+6, R22
+        STD	Z+7, R23
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine22:
+        LDD	R20, Z+4
+        LDD	R21, Z+5
+        LDD	R22, Z+6
+        LDD	R23, Z+7
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine19:
+        ST	Z, R20
+        STD	Z+1, R21
+        STD	Z+2, R22
+        STD	Z+3, R23
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine10:
+        MOVW	R31:R30, R27:R26
+        LDD	R16, Z+4
+        LDD	R17, Z+5
+        ANDI	R17, 0x01
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine6:
+        MOVW	R17:R16, R25:R24
+        RJMP	??shaHash
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,020H
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,021H
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,022H
+__?EEARH:
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_Z>`:
+        DW	SFE(NEAR_Z) - SFB(NEAR_Z)
+        DW	SFB(NEAR_Z)
+        DW	0
+        REQUIRE ?need_segment_init
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for SHA_IV>`:
+        DB 103, 69, 35, 1, 239, 205, 171, 137, 152, 186, 220, 254, 16, 50, 84
+        DB 118, 195, 210, 225, 240
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_I>`:
+        DW	SFE(NEAR_I) - SFB(NEAR_I)
+        DW	SFB(NEAR_I)
+        DW	SFB(NEAR_ID)
+        REQUIRE ?need_segment_init
+
+        END
+// 
+// 1 904 bytes in segment CODE
+//    12 bytes in segment INITTAB
+//    20 bytes in segment NEAR_I
+//    20 bytes in segment NEAR_ID
+//    20 bytes in segment NEAR_Z
+// 
+// 1 924 bytes of CODE memory (+ 12 bytes shared)
+//    40 bytes of DATA memory
+//
+//Errors: none
+//Warnings: none

@@ -1,0 +1,586 @@
+##############################################################################
+#                                                                            #
+#                                                      30/Oct/2005  13:40:05 #
+# IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version                #
+# Copyright 1996-2005 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c        #
+#    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11\ #
+#                    Release\Obj\ -D NDEBUG -lCN                             #
+#                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\     #
+#                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List\ #
+#                     --initializers_in_flash -z9 --cross_call_passes=2      #
+#                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR    #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\" -I "E:\Program Files\IAR              #
+#                    Systems\Embedded Workbench  Evaluation                  #
+#                    version\avr\INC\CLIB\" --eeprom_size 512                #
+#                    E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c        #
+#    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\ccid #
+#                    .lst                                                    #
+#    Object file  =  E:\yanglq\projects\agsm\firmware_ed11\Release\Obj\ccid. #
+#                    r90                                                     #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+E:\yanglq\projects\agsm\firmware_ed11\scr\ccid.c
+      1          #include <inavr.h>
+      2          #include <ioavr.h>
+      3          #include "iso7816.h"
+      4          #include "ccid.h"
+      5          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                      REQUIRE `?<Segment init: NEAR_Z>`
+      6          USB_CCID_BUF ccid_buf;
+   \                     ccid_buf:
+   \   00000000                      DS 271
+      7          
+
+   \                                 In segment CODE, align 2, keep-with-next
+      8          uchar ccid_PowerOn()
+   \                     ccid_PowerOn:
+      9          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+     10            uchar ret;
+     11            icc_reset();
+   \   00000002   ....               RCALL   icc_reset
+     12            ret = read_atr(ccid_buf.Response.Data);
+   \   00000004   ....               LDI     R26, LOW(ccid_buf)
+   \   00000006   ....               LDI     R27, (ccid_buf) >> 8
+   \   00000008   018D               MOVW    R17:R16, R27:R26
+   \   0000000A   5F08               SUBI    R16, 248
+   \   0000000C   4F1F               SBCI    R17, 255
+   \   0000000E   ....               RCALL   read_atr
+     13            ccid_buf.Response.ResponseHeader.wLength = ret+8;/* in order to compatible with asm version only */
+   \   00000010   2F80               MOV     R24, R16
+   \   00000012   E090               LDI     R25, 0
+   \   00000014   9608               ADIW    R25:R24, 8
+   \   00000016   9616               ADIW    R27:R26, 6
+   \   00000018   938D               ST      X+, R24
+   \   0000001A   939C               ST      X, R25
+   \   0000001C   9713               SBIW    R27:R26, 3
+     14            ccid_buf.Response.ResponseHeader.bError = ERROR_CODE;
+   \   0000001E   9110....           LDS     R17, ERROR_CODE
+   \   00000022   931C               ST      X, R17
+     15            ccid_buf.Response.ResponseHeader.bStatus = ERROR_STATUS;
+   \   00000024   9110....           LDS     R17, ERROR_STATUS
+   \   00000028   931E               ST      -X, R17
+     16            LED_ON;
+   \   0000002A   9A2D               SBI     0x05, 0x05
+     17            return ret+8;
+   \   0000002C   5F08               SUBI    R16, 248
+   \   0000002E   ....               RJMP    ?Subroutine3
+     18          }
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine3:
+   \   00000000   E0E4               LDI     R30, 4
+   \   00000002   ....               RJMP    ?EPILOGUE_B4_L09
+     19          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     20          uchar ccid_PowerOff()
+   \                     ccid_PowerOff:
+     21          {
+     22            PowerOff();
+   \   00000000   9856               CBI     0x0A, 0x06
+   \   00000002   9824               CBI     0x04, 0x04
+   \   00000004   B106               IN      R16, 0x06
+   \   00000006   7E03               ANDI    R16, 0xE3
+   \   00000008   B908               OUT     0x08, R16
+     23            LED_OFF;
+   \   0000000A   982D               CBI     0x05, 0x05
+     24            ccid_buf.Response.ResponseHeader.wLength = 0;
+   \   0000000C   ....               LDI     R30, LOW(ccid_buf)
+   \   0000000E   ....               LDI     R31, (ccid_buf) >> 8
+   \   00000010   ....               RCALL   ?Subroutine0
+     25            ccid_buf.Response.ResponseHeader.bError = 0;
+     26            ccid_buf.Response.ResponseHeader.bStatus = 0;
+   \                     ??CrossCallReturnLabel_0:
+   \   00000012   8303               STD     Z+3, R16
+     27            return 8;
+   \   00000014                      REQUIRE ?Subroutine4
+   \   00000014                      ;               // Fall through to label ?Subroutine4
+     28          }
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine4:
+   \   00000000   E008               LDI     R16, 8
+   \   00000002   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   00000000   E000               LDI     R16, 0
+   \   00000002   8306               STD     Z+6, R16
+   \   00000004   8307               STD     Z+7, R16
+   \   00000006   8304               STD     Z+4, R16
+   \   00000008   9508               RET
+     29          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     30          int ccid_XfrBlock()
+   \                     ccid_XfrBlock:
+     31          {
+     32            return 0;
+   \   00000000   E000               LDI     R16, 0
+   \   00000002   E010               LDI     R17, 0
+   \   00000004   9508               RET
+     33          }
+     34          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     35          int ccid_XfrBlockRead()
+   \                     ccid_XfrBlockRead:
+     36          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+     37            int ret;
+     38            ret = t0_tpdu(ccid_buf.Request.Data,ccid_buf.Request.RequestHeader.wLength,ccid_buf.Response.Data);
+   \   00000002   ....               LDI     R26, LOW(ccid_buf)
+   \   00000004   ....               LDI     R27, (ccid_buf) >> 8
+   \   00000006   01AD               MOVW    R21:R20, R27:R26
+   \   00000008   5F48               SUBI    R20, 248
+   \   0000000A   4F5F               SBCI    R21, 255
+   \   0000000C   9616               ADIW    R27:R26, 6
+   \   0000000E   912D               LD      R18, X+
+   \   00000010   913C               LD      R19, X
+   \   00000012   9717               SBIW    R27:R26, 7
+   \   00000014   018D               MOVW    R17:R16, R27:R26
+   \   00000016   5F08               SUBI    R16, 248
+   \   00000018   4F1F               SBCI    R17, 255
+   \   0000001A   ....               RCALL   t0_tpdu
+     39            ccid_buf.Response.ResponseHeader.wLength = ret;
+   \   0000001C   9616               ADIW    R27:R26, 6
+   \   0000001E   930D               ST      X+, R16
+   \   00000020   931C               ST      X, R17
+   \   00000022   9713               SBIW    R27:R26, 3
+     40            ccid_buf.Response.ResponseHeader.bError = ERROR_CODE;
+   \   00000024   9120....           LDS     R18, ERROR_CODE
+   \   00000028   932C               ST      X, R18
+     41            ccid_buf.Response.ResponseHeader.bStatus = ERROR_STATUS;
+   \   0000002A   9120....           LDS     R18, ERROR_STATUS
+   \   0000002E   932E               ST      -X, R18
+     42            return ret+8;
+   \   00000030   5F08               SUBI    R16, 248
+   \   00000032   4F1F               SBCI    R17, 255
+   \   00000034   ....               RJMP    ?Subroutine3
+     43          }
+     44          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     45          uchar ccid_GetSlotStatus()
+   \                     ccid_GetSlotStatus:
+     46          {
+     47            if(PIND & (1<<CARD_STATUS))
+   \   00000000   ....               LDI     R30, LOW(ccid_buf)
+   \   00000002   ....               LDI     R31, (ccid_buf) >> 8
+   \   00000004   9B4B               SBIS    0x09, 0x03
+   \   00000006   C002               RJMP    ??ccid_GetSlotStatus_0
+     48              ccid_buf.Response.ResponseHeader.bStatus = ICC_PRESENT;
+   \   00000008   E001               LDI     R16, 1
+   \   0000000A   C001               RJMP    ??ccid_GetSlotStatus_1
+     49            else
+     50               ccid_buf.Response.ResponseHeader.bStatus = ICC_ABSENT;
+   \                     ??ccid_GetSlotStatus_0:
+   \   0000000C   E002               LDI     R16, 2
+   \                     ??ccid_GetSlotStatus_1:
+   \   0000000E   8303               STD     Z+3, R16
+     51            ccid_buf.Response.ResponseHeader.wLength = 0;
+   \   00000010   ....               RCALL   ?Subroutine0
+     52            ccid_buf.Response.ResponseHeader.bError = 0;
+     53            return 8;
+   \                     ??CrossCallReturnLabel_1:
+   \   00000012   ....               RJMP    ?Subroutine4
+     54          }
+     55          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     56          uchar ccid_SetParameters(uchar n)
+   \                     ccid_SetParameters:
+     57          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+     58            uchar *dst = &OCR0Ax_FREQUENCY;
+   \   00000002   ....               LDI     R30, LOW(OCR0Ax_FREQUENCY)
+   \   00000004   ....               LDI     R31, (OCR0Ax_FREQUENCY) >> 8
+     59            uchar *src = ccid_buf.Request.Data;
+   \   00000006   ....               LDI     R26, LOW((ccid_buf + 8))
+   \   00000008   ....               LDI     R27, (ccid_buf + 8) >> 8
+     60            do
+     61            {
+     62              *dst++ = *src++;
+   \                     ??ccid_SetParameters_0:
+   \   0000000A   911D               LD      R17, X+
+   \   0000000C   9311               ST      Z+, R17
+     63            }while(--n != 0);
+   \   0000000E   950A               DEC     R16
+   \   00000010   F7E1               BRNE    ??ccid_SetParameters_0
+     64          
+     65            OCR0A = OCR0Ax_FREQUENCY;
+   \   00000012   9100....           LDS     R16, OCR0Ax_FREQUENCY
+   \   00000016   BD07               OUT     0x27, R16
+     66            load_one_etu();
+   \   00000018   ....               RCALL   load_one_etu
+     67            return 0;
+   \   0000001A   E000               LDI     R16, 0
+   \   0000001C                      REQUIRE ?Subroutine3
+   \   0000001C                      ;               // Fall through to label ?Subroutine3
+     68          }
+     69          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     70          uchar ccid_GetParameters()
+   \                     ccid_GetParameters:
+     71          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+     72            uchar *src = &OCR0Ax_FREQUENCY;
+   \   00000002   ....               LDI     R30, LOW(OCR0Ax_FREQUENCY)
+   \   00000004   ....               LDI     R31, (OCR0Ax_FREQUENCY) >> 8
+     73            uchar *dst = ccid_buf.Response.Data;
+   \   00000006   ....               LDI     R16, LOW(ccid_buf)
+   \   00000008   ....               LDI     R17, (ccid_buf) >> 8
+   \   0000000A   01D8               MOVW    R27:R26, R17:R16
+   \   0000000C   9618               ADIW    R27:R26, 8
+     74            uchar n = &ERROR_CODE - src;
+   \   0000000E   ....               LDI     R20, LOW(ERROR_CODE)
+   \   00000010   ....               SUBI    R20, LOW(OCR0Ax_FREQUENCY)
+     75            uchar ret = n;
+   \   00000012   2F24               MOV     R18, R20
+   \   00000014   C002               RJMP    ??ccid_GetParameters_0
+     76          
+     77            while(n--)
+     78            {
+     79              *dst++ = *src++;
+   \                     ??ccid_GetParameters_1:
+   \   00000016   9131               LD      R19, Z+
+   \   00000018   933D               ST      X+, R19
+     80            }
+   \                     ??ccid_GetParameters_0:
+   \   0000001A   2F34               MOV     R19, R20
+   \   0000001C   954A               DEC     R20
+   \   0000001E   2333               TST     R19
+   \   00000020   F7D1               BRNE    ??ccid_GetParameters_1
+     81            ccid_buf.Response.ResponseHeader.wLength = ret;
+   \   00000022   E030               LDI     R19, 0
+   \   00000024   01F8               MOVW    R31:R30, R17:R16
+   \   00000026   8326               STD     Z+6, R18
+   \   00000028   8337               STD     Z+7, R19
+     82            ccid_buf.Response.ResponseHeader.bError = ERROR_CODE;
+   \   0000002A   9130....           LDS     R19, ERROR_CODE
+   \   0000002E   8334               STD     Z+4, R19
+     83            ccid_buf.Response.ResponseHeader.bStatus = ERROR_STATUS;
+   \   00000030   9130....           LDS     R19, ERROR_STATUS
+   \   00000034   8333               STD     Z+3, R19
+     84            return ret+8;
+   \   00000036   5F28               SUBI    R18, 248
+   \   00000038   2F02               MOV     R16, R18
+   \   0000003A   ....               RJMP    ?Subroutine3
+     85          }
+     86          
+     87          extern int    USBwriteLen;
+     88          extern int    USBwrittenLen;
+     89          extern uchar  lastRequest;
+
+   \                                 In segment CODE, align 2, keep-with-next
+     90          int ccid_process(PUSB_CCID_REQUEST pCCIDRequest)
+   \                     ccid_process:
+     91          {
+   \   00000000   ....               RCALL   ?PROLOGUE4_L09
+   \   00000002   0198               MOVW    R19:R18, R17:R16
+     92            int len = 0;
+   \   00000004   E040               LDI     R20, 0
+   \   00000006   E050               LDI     R21, 0
+     93            int wLength = pCCIDRequest->RequestHeader.wLength;
+   \   00000008   01F8               MOVW    R31:R30, R17:R16
+   \   0000000A   8186               LDD     R24, Z+6
+   \   0000000C   8197               LDD     R25, Z+7
+     94            uchar bRequestType = pCCIDRequest->RequestHeader.bMessageType;
+   \   0000000E   8101               LDD     R16, Z+1
+     95          
+     96            /* reset global error code */
+     97            ERROR_CODE = 0;
+   \   00000010   9340....           STS     ERROR_CODE, R20
+     98            ERROR_STATUS = 0;
+   \   00000014   9340....           STS     ERROR_STATUS, R20
+     99            ccid_buf.Response.ResponseHeader.bMessageType = bRequestType;
+   \   00000018   ....               LDI     R26, LOW(ccid_buf)
+   \   0000001A   ....               LDI     R27, (ccid_buf) >> 8
+   \   0000001C   01FD               MOVW    R31:R30, R27:R26
+   \   0000001E   8301               STD     Z+1, R16
+    100            ccid_buf.Response.ResponseHeader.bSeq = pCCIDRequest->RequestHeader.bSeq;
+   \   00000020   01F9               MOVW    R31:R30, R19:R18
+   \   00000022   8112               LDD     R17, Z+2
+   \   00000024   01FD               MOVW    R31:R30, R27:R26
+   \   00000026   8312               STD     Z+2, R17
+    101          
+    102            if(bRequestType == PC_to_RDR_IccPowerOn)
+   \   00000028   3602               CPI     R16, 98
+   \   0000002A   F421               BRNE    ??ccid_process_0
+    103            {
+    104              len = ccid_PowerOn();
+   \   0000002C   ....               RCALL   ccid_PowerOn
+   \                     ??ccid_process_1:
+   \   0000002E   2F40               MOV     R20, R16
+   \   00000030   E050               LDI     R21, 0
+   \   00000032   C044               RJMP    ??ccid_process_2
+    105            }else if(bRequestType == PC_to_RDR_IccPowerOff)
+   \                     ??ccid_process_0:
+   \   00000034   3603               CPI     R16, 99
+   \   00000036   F411               BRNE    ??ccid_process_3
+    106            {
+    107              len = ccid_PowerOff();
+   \   00000038   ....               RCALL   ccid_PowerOff
+   \   0000003A   CFF9               RJMP    ??ccid_process_1
+    108            }else if(bRequestType == PC_to_RDR_XfrBlock)
+   \                     ??ccid_process_3:
+   \   0000003C   360F               CPI     R16, 111
+   \   0000003E   F439               BRNE    ??ccid_process_4
+    109            {
+    110              USBwriteLen = wLength;
+   \   00000040   ....               RCALL   ?Subroutine1
+    111              ccid_buf.Request.RequestHeader.wLength = wLength;
+   \                     ??CrossCallReturnLabel_2:
+   \   00000042   01FD               MOVW    R31:R30, R27:R26
+   \   00000044   8386               STD     Z+6, R24
+   \   00000046   8397               STD     Z+7, R25
+    112              USBwrittenLen = 0;
+   \   00000048   ....               RCALL   ?Subroutine2
+    113              lastRequest = PC_to_RDR_XfrBlock;
+   \                     ??CrossCallReturnLabel_4:
+   \   0000004A   E60F               LDI     R16, 111
+   \   0000004C   C033               RJMP    ??ccid_process_5
+    114              len = -1;
+    115            }else if(bRequestType == PC_to_RDR_XfrBlockRead)
+   \                     ??ccid_process_4:
+   \   0000004E   3700               CPI     R16, 112
+   \   00000050   F521               BRNE    ??ccid_process_6
+    116            {
+    117              if((lastRequest == PC_to_RDR_XfrBlock) && (USBwriteLen == USBwrittenLen))
+   \   00000052   9100....           LDS     R16, lastRequest
+   \   00000056   360F               CPI     R16, 111
+   \   00000058   F4C9               BRNE    ??ccid_process_7
+   \   0000005A   ....               LDI     R30, LOW(USBwriteLen)
+   \   0000005C   ....               LDI     R31, (USBwriteLen) >> 8
+   \   0000005E   8100               LD      R16, Z
+   \   00000060   8111               LDD     R17, Z+1
+   \   00000062   ....               LDI     R30, LOW(USBwrittenLen)
+   \   00000064   ....               LDI     R31, (USBwrittenLen) >> 8
+   \   00000066   8120               LD      R18, Z
+   \   00000068   8131               LDD     R19, Z+1
+   \   0000006A   1702               CP      R16, R18
+   \   0000006C   0713               CPC     R17, R19
+   \   0000006E   F531               BRNE    ??ccid_process_2
+    118              {
+    119                LED_TOGGLE;
+   \   00000070   B103               IN      R16, 0x03
+   \   00000072   FF05               SBRS    R16, 5
+   \   00000074   9A2D               SBI     0x05, 0x05
+   \                     ??ccid_process_8:
+   \   00000076   FD05               SBRC    R16, 5
+   \   00000078   982D               CBI     0x05, 0x05
+    120                __disable_interrupt(); /* FIXME: should disable INT0 only */
+   \                     ??ccid_process_9:
+   \   0000007A   94F8               CLI
+    121                len = ccid_XfrBlockRead();
+   \   0000007C   ....               RCALL   ccid_XfrBlockRead
+   \   0000007E   01A8               MOVW    R21:R20, R17:R16
+    122                /* clear the INT0 pending bit */
+    123                EIFR |= (1<<INTF0);
+   \   00000080   9AE0               SBI     0x1C, 0x00
+    124                __enable_interrupt();
+   \   00000082   9478               SEI
+    125                lastRequest = PC_to_RDR_XfrBlockRead;
+   \   00000084   E700               LDI     R16, 112
+   \   00000086   9300....           STS     lastRequest, R16
+   \   0000008A   C018               RJMP    ??ccid_process_2
+    126              }else if(lastRequest == PC_to_RDR_XfrBlockRead)
+   \                     ??ccid_process_7:
+   \   0000008C   3700               CPI     R16, 112
+   \   0000008E   F4B1               BRNE    ??ccid_process_2
+    127              {
+    128                len = ccid_buf.Request.RequestHeader.wLength+8;
+   \   00000090   8146               LDD     R20, Z+6
+   \   00000092   8157               LDD     R21, Z+7
+   \   00000094   5F48               SUBI    R20, 248
+   \   00000096   4F5F               SBCI    R21, 255
+   \   00000098   C011               RJMP    ??ccid_process_2
+    129              }
+    130            }else if(bRequestType == PC_to_RDR_GetSlotStatus)
+   \                     ??ccid_process_6:
+   \   0000009A   3605               CPI     R16, 101
+   \   0000009C   F411               BRNE    ??ccid_process_10
+    131            {
+    132              len = ccid_GetSlotStatus();
+   \   0000009E   ....               RCALL   ccid_GetSlotStatus
+   \   000000A0   CFC6               RJMP    ??ccid_process_1
+    133            }else if(bRequestType == PC_to_RDR_GetParameters)
+   \                     ??ccid_process_10:
+   \   000000A2   360C               CPI     R16, 108
+   \   000000A4   F411               BRNE    ??ccid_process_11
+    134            {
+    135              len = ccid_GetParameters();
+   \   000000A6   ....               RCALL   ccid_GetParameters
+   \   000000A8   CFC2               RJMP    ??ccid_process_1
+    136            }else if(bRequestType == PC_to_RDR_SetParameters)
+   \                     ??ccid_process_11:
+   \   000000AA   3601               CPI     R16, 97
+   \   000000AC   F429               BRNE    ??ccid_process_12
+    137            {
+    138              USBwriteLen = wLength;
+   \   000000AE   ....               RCALL   ?Subroutine1
+    139              USBwrittenLen = 0;
+   \                     ??CrossCallReturnLabel_3:
+   \   000000B0   ....               RCALL   ?Subroutine2
+    140              lastRequest = PC_to_RDR_SetParameters;
+   \                     ??CrossCallReturnLabel_5:
+   \   000000B2   E601               LDI     R16, 97
+   \                     ??ccid_process_5:
+   \   000000B4   9300....           STS     lastRequest, R16
+    141              len = -1;
+    142            }else{
+    143              len = -1;
+   \                     ??ccid_process_12:
+   \   000000B8   EF4F               LDI     R20, 255
+   \   000000BA   EF5F               LDI     R21, 255
+    144            }
+    145            return len > wLength ? wLength : len;
+   \                     ??ccid_process_2:
+   \   000000BC   1784               CP      R24, R20
+   \   000000BE   0795               CPC     R25, R21
+   \   000000C0   F414               BRGE    ??ccid_process_13
+   \   000000C2   018C               MOVW    R17:R16, R25:R24
+   \   000000C4   C001               RJMP    ??ccid_process_14
+   \                     ??ccid_process_13:
+   \   000000C6   018A               MOVW    R17:R16, R21:R20
+   \                     ??ccid_process_14:
+   \   000000C8   ....               RJMP    ?Subroutine3
+    146          }
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine2:
+   \   00000000   ....               LDI     R30, LOW(USBwrittenLen)
+   \   00000002   ....               LDI     R31, (USBwrittenLen) >> 8
+   \   00000004   8340               ST      Z, R20
+   \   00000006   8341               STD     Z+1, R20
+   \   00000008   9508               RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+   \                     ?Subroutine1:
+   \   00000000   ....               LDI     R30, LOW(USBwriteLen)
+   \   00000002   ....               LDI     R31, (USBwriteLen) >> 8
+   \   00000004   8380               ST      Z, R24
+   \   00000006   8391               STD     Z+1, R25
+   \   00000008   9508               RET
+
+   \                                 In segment ABSOLUTE, at 0x47
+   \   union <unnamed> volatile __io _A_OCR0A
+   \                     _A_OCR0A:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3c
+   \   union <unnamed> volatile __io _A_EIFR
+   \                     _A_EIFR:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x2a
+   \   union <unnamed> volatile __io _A_DDRD
+   \                     _A_DDRD:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x29
+   \   union <unnamed> volatile __io _A_PIND
+   \                     _A_PIND:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x28
+   \   union <unnamed> volatile __io _A_PORTC
+   \                     _A_PORTC:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x26
+   \   union <unnamed> volatile __io _A_PINC
+   \                     _A_PINC:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x25
+   \   union <unnamed> volatile __io _A_PORTB
+   \                     _A_PORTB:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x24
+   \   union <unnamed> volatile __io _A_DDRB
+   \                     _A_DDRB:
+   \   00000000                      DS 1
+
+   \                                 In segment ABSOLUTE, at 0x23
+   \   union <unnamed> volatile __io _A_PINB
+   \                     _A_PINB:
+   \   00000000                      DS 1
+    147          
+    148          
+    149          
+    150          
+
+   Maximum stack usage in bytes:
+
+     Function                CSTACK RSTACK
+     --------                ------ ------
+     ccid_GetParameters          4      2
+     ccid_GetSlotStatus          0      2
+     ccid_PowerOff               0      2
+     ccid_PowerOn                4      2
+       -> icc_reset              4      2
+       -> read_atr               4      2
+     ccid_SetParameters          4      2
+       -> load_one_etu           4      2
+     ccid_XfrBlock               0      2
+     ccid_XfrBlockRead           4      2
+       -> t0_tpdu                4      2
+     ccid_process                4      2
+       -> ccid_PowerOn           4      2
+       -> ccid_PowerOff          4      2
+       -> ccid_XfrBlockRead      4      2
+       -> ccid_GetSlotStatus     4      2
+       -> ccid_GetParameters     4      2
+
+
+   Segment part sizes:
+
+     Function/Label     Bytes
+     --------------     -----
+     ccid_buf            271
+     ccid_PowerOn         48
+     ?Subroutine3          4
+     ccid_PowerOff        20
+     ?Subroutine4          4
+     ?Subroutine0         10
+     ccid_XfrBlock         6
+     ccid_XfrBlockRead    54
+     ccid_GetSlotStatus   20
+     ccid_SetParameters   28
+     ccid_GetParameters   60
+     ccid_process        202
+     ?Subroutine2         10
+     ?Subroutine1         10
+     _A_OCR0A              1
+     _A_EIFR               1
+     _A_DDRD               1
+     _A_PIND               1
+     _A_PORTC              1
+     _A_PINC               1
+     _A_PORTB              1
+     _A_DDRB               1
+     _A_PINB               1
+      Others               6
+
+ 
+   9 bytes in segment ABSOLUTE
+ 476 bytes in segment CODE
+   6 bytes in segment INITTAB
+ 271 bytes in segment NEAR_Z
+ 
+ 476 bytes of CODE memory (+ 6 bytes shared)
+ 271 bytes of DATA memory (+ 9 bytes shared)
+
+Errors: none
+Warnings: none

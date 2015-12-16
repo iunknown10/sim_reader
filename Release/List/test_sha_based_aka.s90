@@ -1,0 +1,1277 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+//                                                     30/Oct/2005  13:40:12 /
+// IAR Atmel AVR C/C++ Compiler V4.10A/W32, Evaluation Version               /
+// Copyright 1996-2005 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sh /
+//                    a_based_aka.c                                          /
+//    Command line =  --cpu=m88 -ms -o E:\yanglq\projects\agsm\firmware_ed11 /
+//                    \Release\Obj\ -D NDEBUG -lCN                           /
+//                    E:\yanglq\projects\agsm\firmware_ed11\Release\List\    /
+//                    -lB E:\yanglq\projects\agsm\firmware_ed11\Release\List /
+//                    \ --initializers_in_flash -z9 --cross_call_passes=2    /
+//                    -DENABLE_BIT_DEFINITIONS -e -I "E:\Program Files\IAR   /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\" -I "E:\Program Files\IAR             /
+//                    Systems\Embedded Workbench  Evaluation                 /
+//                    version\avr\INC\CLIB\" --eeprom_size 512               /
+//                    E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sh /
+//                    a_based_aka.c                                          /
+//    List file    =  E:\yanglq\projects\agsm\firmware_ed11\Release\List\tes /
+//                    t_sha_based_aka.s90                                    /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME test_sha_based_aka
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?EPILOGUE_B12_L09
+        EXTERN ?EPILOGUE_B4_L09
+        EXTERN ?ML_FLASH_SRAM_16EC_16_L07
+        EXTERN ?PROLOGUE12_L09
+        EXTERN ?PROLOGUE4_L09
+        EXTERN ?Register_R10_is_cg_reg
+        EXTERN ?Register_R11_is_cg_reg
+        EXTERN ?Register_R4_is_cg_reg
+        EXTERN ?Register_R5_is_cg_reg
+        EXTERN ?Register_R6_is_cg_reg
+        EXTERN ?Register_R7_is_cg_reg
+        EXTERN ?Register_R8_is_cg_reg
+        EXTERN ?Register_R9_is_cg_reg
+        EXTERN ?need_segment_init
+        EXTERN __eeget8_16
+        EXTERN __eeput8_16
+
+        PUBWEAK `?<Segment init: NEAR_I>`
+?Subroutine11 EQU 0
+?Subroutine19 EQU 0
+?Subroutine3 EQU 0
+        PUBLIC SQNms
+        PUBWEAK _A_PORTB
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC ee_var
+        PUBLIC msg_data
+        PUBLIC pause
+        PUBLIC run_aka
+        PUBLIC test_aka
+        PUBLIC test_eeprom
+
+        EXTERN f5
+        EXTERN f1
+        EXTERN memcmp
+        EXTERN f2
+        EXTERN f3
+        EXTERN f4
+        EXTERN f5star
+        EXTERN f1star
+        EXTERN f0
+        EXTERN f11
+
+// E:\yanglq\projects\agsm\firmware_ed11\3gpp-aka\test_sha_based_aka.c
+//    1 /* test_sha_based_aka.c */
+//    2 
+//    3 #include <stdio.h>
+//    4 #include <string.h>
+//    5 #include "aka.h"
+//    6 
+//    7 static uchar K[]={0xad,0x1b,0x5a,0x15,0x9b,0xe8,0x6b,0x2c,
+//    8 		   0xa6,0x6c,0x7a,0xe4,0x0b,0xba,0x9b,0x9d};
+//    9 static uchar Fmk[L_FMK] = { 'A', 'H', 'A', 'G' };
+
+        RSEG EEPROM_I:XDATA:NOROOT(0)
+//   10 __eeprom volatile uchar SQNms[L_SQN]={0x00,0x00,0x00,0x00,0x00,0x00};
+SQNms:
+        DB 0, 0, 0, 0, 0, 0
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+`?<Constant "abcdbcdecdefdefgefghf...">`:
+        DS 57
+        REQUIRE `?<Initializer for <Constant "abcdbcdecdefdefge`
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   11 static uchar fi0=0x41;
+??fi0:
+        DS 1
+        REQUIRE `?<Initializer for fi0>`
+        DS 1
+        REQUIRE `?<Initializer for fi1>`
+        DS 1
+        REQUIRE `?<Initializer for fi1star>`
+        DS 1
+        REQUIRE `?<Initializer for fi2>`
+        DS 1
+        REQUIRE `?<Initializer for fi3>`
+        DS 1
+        REQUIRE `?<Initializer for fi4>`
+        DS 1
+        REQUIRE `?<Initializer for fi5>`
+        DS 1
+        REQUIRE `?<Initializer for fi5star>`
+        DS 16
+        REQUIRE `?<Initializer for K>`
+        DS 4
+        REQUIRE `?<Initializer for Fmk>`
+//   12 static uchar fi1=0x42;
+//   13 static uchar fi1star=0x43;
+//   14 static uchar fi2=0x44;
+//   15 static uchar fi3=0x45;
+//   16 static uchar fi4=0x46;
+//   17 static uchar fi5=0x47;
+//   18 static uchar fi5star=0x48;
+
+        RSEG EEPROM_I:XDATA:NOROOT(0)
+//   19 __eeprom volatile unsigned char ee_var = 0xff;
+ee_var:
+        DB 255
+//   20 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   21 void test_eeprom()
+test_eeprom:
+//   22 {
+//   23   unsigned char temp;
+//   24 
+//   25   temp = ee_var;
+        LDI	R20, LOW(ee_var)
+        LDI	R21, (ee_var) >> 8
+        RCALL	__eeget8_16
+//   26   PORTB = temp;
+        OUT	0x05, R16
+//   27 }
+        RET
+//   28 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   29 uchar run_aka(uchar *rand_autn, uchar len, uchar *res)
+run_aka:
+//   30 {
+        RCALL	?PROLOGUE12_L09
+        REQUIRE	?Register_R4_is_cg_reg
+        REQUIRE	?Register_R5_is_cg_reg
+        REQUIRE	?Register_R6_is_cg_reg
+        REQUIRE	?Register_R7_is_cg_reg
+        REQUIRE	?Register_R8_is_cg_reg
+        REQUIRE	?Register_R9_is_cg_reg
+        REQUIRE	?Register_R10_is_cg_reg
+        REQUIRE	?Register_R11_is_cg_reg
+        SBIW	R29:R28, 20
+        MOVW	R25:R24, R17:R16
+        MOVW	R5:R4, R21:R20
+//   31   uchar AK[L_AK];
+//   32   uchar SQN[L_SQN];
+//   33   uchar XMAC[L_MACA];
+//   34   uchar *RAND = &rand_autn[1];
+        MOVW	R9:R8, R17:R16
+        LDI	R16, 1
+        ADD	R8, R16
+        LDI	R16, 0
+        ADC	R9, R16
+//   35   uchar *AMF = &rand_autn[1+16+1+6];
+        MOVW	R11:R10, R25:R24
+        LDI	R16, 24
+        ADD	R10, R16
+        LDI	R16, 0
+        ADC	R11, R16
+//   36   uchar *MAC = &rand_autn[1+16+1+6+2];
+        MOVW	R7:R6, R25:R24
+        LDI	R16, 26
+        ADD	R6, R16
+        LDI	R16, 0
+        ADC	R7, R16
+//   37   int i;
+//   38 
+//   39   f5(K,fi5,RAND,Fmk,AK);
+        LDI	R26, LOW(??fi0)
+        LDI	R27, (??fi0) >> 8
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 250
+        RCALL	??Subroutine1_0
+??CrossCallReturnLabel_88:
+        RCALL	?Subroutine12
+//   40   for(i=0; i<L_SQN; i++)
+??CrossCallReturnLabel_27:
+        RCALL	?Subroutine17
+//   41   {
+//   42     SQN[i] = AK[i] ^ rand_autn[i+18];
+??CrossCallReturnLabel_36:
+        RCALL	?Subroutine28
+??CrossCallReturnLabel_73:
+        LDD	R17, Z+6
+        MOVW	R31:R30, R25:R24
+        ADD	R30, R18
+        ADC	R31, R19
+        LDD	R20, Z+18
+        EOR	R20, R17
+        RCALL	?Subroutine28
+??CrossCallReturnLabel_74:
+        ST	Z, R20
+//   43   }
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_0:
+        BRLT	??CrossCallReturnLabel_36
+//   44   f1(K,fi1,RAND,Fmk,SQN,AMF,XMAC);
+        RCALL	?Subroutine1
+??CrossCallReturnLabel_89:
+        RCALL	?Subroutine13
+//   45   //verify MAC
+//   46   if(memcmp(XMAC,MAC,8))
+??CrossCallReturnLabel_29:
+        LDI	R20, 8
+        LDI	R21, 0
+        MOVW	R19:R18, R7:R6
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 244
+        SBCI	R17, 255
+        RCALL	memcmp
+        OR	R16, R17
+        BREQ	??run_aka_0
+//   47   {//"MAC != XMAC"
+//   48     *res++ = 0x98;
+        LDI	R16, 152
+        MOVW	R31:R30, R5:R4
+        ST	Z, R16
+//   49     *res++ = 0x62;
+        LDI	R16, 98
+        STD	Z+1, R16
+//   50     return 2;
+        LDI	R16, 2
+        RJMP	??run_aka_1
+//   51   }else{//MAC ok
+//   52     //Verify that SQN is in the correct range
+//   53     for(i=0; i<L_SQN; i++)
+??run_aka_0:
+        RCALL	?Subroutine17
+//   54     {
+//   55       if(SQN[i] - SQNms[i] == 1)
+??CrossCallReturnLabel_37:
+        RCALL	?Subroutine28
+??CrossCallReturnLabel_75:
+        LD	R0, Z
+        CLR	R1
+        RCALL	?Subroutine18
+??CrossCallReturnLabel_41:
+        SUB	R0, R16
+        SBC	R1, R1
+        LDI	R16, 1
+        CP	R0, R16
+        CPC	R1, R17
+        BRNE	??run_aka_2
+//   56       {
+//   57         for(i=i+1; i<L_SQN; i++)
+??run_aka_3:
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_1:
+        BRGE	??run_aka_4
+//   58         {
+//   59           if(SQNms[i] - SQN[i] != 0xff)
+        RCALL	?Subroutine18
+??CrossCallReturnLabel_42:
+        RCALL	?Subroutine28
+??CrossCallReturnLabel_76:
+        LD	R20, Z
+        SUB	R16, R20
+        SBCI	R17, 0
+        CPI	R16, 255
+        SBCI	R17, 0
+        BRNE	??run_aka_5
+        RJMP	??run_aka_3
+//   60             goto resync;
+//   61         }
+//   62         //if SQN - SQNms == 1, i think SQN is correct
+//   63         for(i=0; i<L_SQN; i++)
+??run_aka_4:
+        RCALL	?Subroutine17
+//   64           SQNms[i] = SQN[i];
+??CrossCallReturnLabel_38:
+        RCALL	?Subroutine28
+??CrossCallReturnLabel_77:
+        LD	R16, Z
+        RCALL	?Subroutine27
+??CrossCallReturnLabel_70:
+        MOVW	R21:R20, R23:R22
+        RCALL	__eeput8_16
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_2:
+        BRLT	??CrossCallReturnLabel_38
+//   65         *res++ = 0xdb;
+        LDI	R16, 219
+        MOVW	R31:R30, R5:R4
+        ST	Z+, R16
+//   66         *res++ = 16;
+        LDI	R16, 16
+        RCALL	?Subroutine20
+//   67         f2(K,fi2,RAND,Fmk,res,L_RES);
+??CrossCallReturnLabel_43:
+        RCALL	?Subroutine26
+??CrossCallReturnLabel_66:
+        RCALL	?Subroutine9
+??CrossCallReturnLabel_14:
+        RCALL	?Subroutine14
+//   68         res += 16;
+??CrossCallReturnLabel_31:
+        RCALL	?Subroutine8
+//   69         *res++ = 16;
+??CrossCallReturnLabel_12:
+        RCALL	?Subroutine20
+//   70 	f3(K,fi3,RAND,Fmk,res);
+??CrossCallReturnLabel_44:
+        RCALL	?Subroutine9
+??CrossCallReturnLabel_15:
+        RCALL	?Subroutine15
+//   71         res += 16;
+??CrossCallReturnLabel_33:
+        RCALL	?Subroutine8
+//   72         *res++ = 16;
+??CrossCallReturnLabel_13:
+        ST	Z, R16
+//   73 	f4(K,fi4,RAND,Fmk,res);
+        LDI	R16, 1
+        ADD	R4, R16
+        LDI	R16, 0
+        ADC	R5, R16
+        ST	-Y, R5
+        ST	-Y, R4
+        RCALL	?Subroutine25
+??CrossCallReturnLabel_87:
+        LDD	R18, Z+5
+        ADIW	R27:R26, 8
+        MOVW	R17:R16, R27:R26
+        RCALL	f4
+//   74         return 52;
+        LDI	R16, 52
+        RJMP	??run_aka_1
+//   75       }
+//   76     }
+??run_aka_2:
+        SUBI	R18, 255
+        SBCI	R19, 255
+        CPI	R18, 6
+        CPC	R19, R17
+        BRLT	??CrossCallReturnLabel_37
+//   77 resync:
+//   78     *res++ = 0xdc;
+??run_aka_5:
+        LDI	R16, 220
+        MOVW	R31:R30, R5:R4
+        ST	Z+, R16
+//   79     *res++ = 14;
+        LDI	R16, 14
+        RCALL	?Subroutine20
+//   80     f5star(K,fi5star,RAND,Fmk,AK);
+??CrossCallReturnLabel_45:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 250
+        RCALL	??Subroutine1_0
+??CrossCallReturnLabel_90:
+        RCALL	?Subroutine16
+//   81     for(i=0; i<L_SQN; i++)
+??CrossCallReturnLabel_35:
+        RCALL	?Subroutine17
+//   82     {
+//   83       *res++ = SQNms[i] ^ AK[i];
+??CrossCallReturnLabel_39:
+        RCALL	?Subroutine27
+??CrossCallReturnLabel_71:
+        RCALL	?Subroutine7
+??CrossCallReturnLabel_79:
+        LDD	R17, Z+6
+        EOR	R17, R16
+        MOVW	R31:R30, R5:R4
+        ST	Z+, R17
+        MOVW	R5:R4, R31:R30
+//   84       SQN[i] = SQNms[i];
+        RCALL	?Subroutine7
+??CrossCallReturnLabel_80:
+        ST	Z, R16
+//   85     }
+        RCALL	?Subroutine4
+??CrossCallReturnLabel_3:
+        BRLT	??CrossCallReturnLabel_39
+//   86     f1star(K,fi1star,RAND,Fmk,SQN,AMF,XMAC);
+        RCALL	?Subroutine1
+??CrossCallReturnLabel_91:
+        LDD	R18, Z+2
+        ADIW	R27:R26, 8
+        MOVW	R17:R16, R27:R26
+        RCALL	f1star
+//   87     for(i=0; i<8; i++)
+        RCALL	?Subroutine17
+//   88       *res++ = XMAC[i];
+??CrossCallReturnLabel_40:
+        RCALL	?Subroutine28
+??CrossCallReturnLabel_78:
+        LDD	R16, Z+12
+        MOVW	R31:R30, R5:R4
+        RCALL	?Subroutine20
+??CrossCallReturnLabel_46:
+        SUBI	R18, 255
+        SBCI	R19, 255
+        CPI	R18, 8
+        RCALL	??Subroutine4_0
+??CrossCallReturnLabel_4:
+        BRLT	??CrossCallReturnLabel_40
+//   89     return 16;
+        LDI	R16, 16
+??run_aka_1:
+        ADIW	R29:R28, 20
+        LDI	R30, 12
+        RJMP	?EPILOGUE_B12_L09
+//   90   }
+//   91 }
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine26:
+        LDI	R17, 0
+??Subroutine26_0:
+        ST	-Y, R17
+        ST	-Y, R16
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine20:
+        ST	Z+, R16
+        MOVW	R5:R4, R31:R30
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine27:
+        LDI	R22, LOW(SQNms)
+        LDI	R23, (SQNms) >> 8
+        ADD	R22, R18
+        ADC	R23, R19
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine18:
+        RCALL	?Subroutine27
+??CrossCallReturnLabel_72:
+        MOVW	R21:R20, R23:R22
+        RCALL	__eeget8_16
+        LDI	R17, 0
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine17:
+        LDI	R18, 0
+        LDI	R19, 0
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine28:
+        MOVW	R31:R30, R29:R28
+        ADD	R30, R18
+        ADC	R31, R19
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine9:
+        ST	-Y, R31
+        ST	-Y, R30
+        RJMP	?Subroutine25
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine8:
+        LDI	R16, 16
+        ADD	R4, R16
+        LDI	R16, 0
+        ADC	R5, R16
+        LDI	R16, 16
+        MOVW	R31:R30, R5:R4
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine7:
+        MOVW	R21:R20, R23:R22
+        RCALL	__eeget8_16
+        RJMP	?Subroutine28
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine4:
+        SUBI	R18, 255
+        SBCI	R19, 255
+        CPI	R18, 6
+??Subroutine4_0:
+        LDI	R16, 0
+        CPC	R19, R16
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 244
+        SBCI	R17, 255
+        RCALL	??Subroutine26_0
+??CrossCallReturnLabel_68:
+        ST	-Y, R11
+        ST	-Y, R10
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 252
+??Subroutine1_0:
+        SBCI	R17, 255
+        RCALL	??Subroutine26_0
+??CrossCallReturnLabel_69:
+        REQUIRE ?Subroutine25
+        ;		// Fall through to label ?Subroutine25
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine25:
+        MOVW	R23:R22, R27:R26
+        SUBI	R22, 232
+        SBCI	R23, 255
+        MOVW	R21:R20, R9:R8
+        RJMP	??Subroutine29_0
+//   92 
+//   93 //#define DEBUG
+//   94 #ifdef DEBUG
+//   95 #define dbg_printf(...) printf(__VA_ARGS__)
+//   96 #else
+//   97 #define dbg_printf(...)
+//   98 #endif
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+        REQUIRE `?<Segment init: NEAR_I>`
+//   99 unsigned char *msg_data =
+msg_data:
+        DS 2
+        REQUIRE `?<Initializer for msg_data>`
+//  100 	"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+//  101 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  102 void pause(void)
+pause:
+//  103 {
+//  104 	dbg_printf("Press any key to continue\n");
+//  105 #ifdef DEBUG
+//  106 	getchar();
+//  107 #endif
+//  108 }
+        RET
+//  109 
+//  110 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  111 void test_aka()
+test_aka:
+//  112 {
+        RCALL	?PROLOGUE4_L09
+        SBIW	R29:R28, 63
+        SBIW	R29:R28, 63
+        SBIW	R29:R28, 56
+//  113         uchar seed[]={0xb0,0xab,0xb9,0x9d,0x6a,0xc6,0xa7,0x4e,
+//  114 			0xb9,0x8e,0xb6,0xc2,0xda,0xb1,0xa5,0x51};
+        MOVW	R19:R18, R29:R28
+        SUBI	R18, 90
+        SBCI	R19, 255
+        MOVW	R17:R16, R19:R18
+        LDI	R30, LOW(`?<Constant {(uchar)'\\260', (uchar)'\\253', (uch`)
+        LDI	R31, (`?<Constant {(uchar)'\\260', (uchar)'\\253', (uch`) >> 8
+        LDI	R20, 16
+        LDI	R21, 0
+        RCALL	?ML_FLASH_SRAM_16EC_16_L07
+//  115 
+//  116 	uchar RAND[L_RAND];
+//  117 
+//  118 	uchar CK[L_CK];
+//  119 	uchar IK[L_IK];
+//  120         uchar UAK[L_UAK];
+//  121 
+//  122 	uchar MACA[L_MACA];
+//  123 	uchar MACS[L_MACS];
+//  124 	uchar RES[L_RES];
+//  125 	uchar AK[L_AK];
+//  126 	uchar AKS[L_AKS];
+//  127 
+//  128 	uchar SQN[L_SQN]={0x00,0x00,0x00,0x00,0x00,0x01};
+        MOVW	R19:R18, R29:R28
+        SUBI	R18, 238
+        SBCI	R19, 255
+        MOVW	R17:R16, R19:R18
+        LDI	R20, 6
+        RCALL	?ML_FLASH_SRAM_16EC_16_L07
+//  129 	uchar fi11;
+//  130 
+//  131 	uchar buff1[L_RAND/2],buff2[L_RAND/2];
+//  132 
+//  133 	uchar AMF[2];
+//  134         uchar RAND_AUTN[34];
+//  135 	int i;
+//  136 
+//  137         fi11 = 0x50;
+//  138 	dbg_printf("test vector for f0:\n");
+//  139 	dbg_printf("input section\n");
+//  140 	dbg_printf("seed is:	");
+//  141 	for(i=0;i<L_KEY;i++)
+//  142 		dbg_printf("%02x ",seed[i]);
+//  143 	dbg_printf("\n");
+//  144 	dbg_printf("fi0 is:		%02x\n",fi0);
+//  145 	dbg_printf("Fmk is:		");
+//  146 	for (i=0;i<L_FMK;i++)
+//  147 		dbg_printf("%02x ",Fmk[i]);
+//  148 	dbg_printf("\n");
+//  149 
+//  150 	dbg_printf("\n");
+//  151 
+//  152 	f0(seed,fi0,Fmk,buff1);
+        LDI	R26, LOW(??fi0)
+        LDI	R27, (??fi0) >> 8
+        MOVW	R23:R22, R29:R28
+        SUBI	R22, 218
+        RCALL	?Subroutine6
+//  153 	f0(seed,fi0,Fmk,buff2);
+??CrossCallReturnLabel_11:
+        MOVW	R23:R22, R29:R28
+        SUBI	R22, 210
+        RCALL	?Subroutine6
+//  154 
+//  155 	dbg_printf("output section\n");
+//  156 	dbg_printf("f0 	RAND:	");
+//  157 	for (i=0;i<L_RAND/2;i++)
+//  158 		dbg_printf("%02x ",buff1[i]);
+//  159 	for (i=0;i<L_RAND/2;i++)
+//  160 		dbg_printf("%02x ",buff2[i]);
+//  161 	dbg_printf("\n");
+//  162 
+//  163 	pause();
+//  164 
+//  165 	/* reuse RAND generated for the subsequent function calls*/
+//  166 	for (i=0;i<L_RAND/2;i++)
+??CrossCallReturnLabel_10:
+        RCALL	?Subroutine21
+//  167 		RAND[i] = buff1[i];
+??CrossCallReturnLabel_47:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_16:
+        LDD	R16, Z+38
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_17:
+        STD	Z+2, R16
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_5:
+        BRLT	??CrossCallReturnLabel_47
+//  168 	for (i=0;i<L_RAND/2;i++)
+        RCALL	?Subroutine21
+//  169 		RAND[i+L_RAND/2] = buff2[i];
+??CrossCallReturnLabel_48:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_18:
+        LDD	R16, Z+46
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_19:
+        STD	Z+10, R16
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_6:
+        BRLT	??CrossCallReturnLabel_48
+//  170 
+//  171 	AMF[0]=0x00;
+        ST	Y, R16
+//  172 	AMF[1]=0x01;
+        LDI	R16, 1
+        STD	Y+1, R16
+//  173 
+//  174 	dbg_printf("\n");
+//  175 	dbg_printf("\n");
+//  176 	dbg_printf("test vector for f1:\n");
+//  177 	dbg_printf("input section\n");
+//  178 	dbg_printf("K is:		");
+//  179 	for(i=0;i<L_KEY;i++)
+//  180 		dbg_printf("%02x ",K[i]);
+//  181 	dbg_printf("\n");
+//  182 	dbg_printf("fi1 is:		%02x\n",fi1);
+//  183 	dbg_printf("RAND is:	");
+//  184 	for(i=0;i<L_RAND;i++)
+//  185 		dbg_printf("%02x ",RAND[i]);
+//  186 	dbg_printf("\n");
+//  187 	dbg_printf("Fmk is:		");
+//  188 	for(i=0;i<L_FMK;i++)
+//  189 		dbg_printf("%02x ",Fmk[i]);
+//  190 	dbg_printf("\n");
+//  191 	dbg_printf("SQN is:		");
+//  192 	for(i=0;i<L_SQN;i++)
+//  193 		dbg_printf("%02x ",SQN[i]);
+//  194 	dbg_printf("\n");
+//  195 	dbg_printf("AMF is:		%02x %02x\n",AMF[0],AMF[1]);
+//  196 
+//  197 	f1(K,fi1,RAND,Fmk,SQN,AMF,MACA);
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 226
+        RCALL	?Subroutine2
+??CrossCallReturnLabel_85:
+        RCALL	?Subroutine13
+//  198 	dbg_printf("\n");
+//  199 	dbg_printf("output section\n");
+//  200 	dbg_printf("f1 	MACA:	");
+//  201 	for (i=0;i<L_MACA;i++)
+//  202 		dbg_printf("%02x ",MACA[i]);
+//  203 	dbg_printf("\n");
+//  204 
+//  205 	pause();
+//  206 
+//  207 	dbg_printf("\n");
+//  208 	dbg_printf("\n");
+//  209 	dbg_printf("test vector for f5\n");
+//  210 	dbg_printf("input section\n");
+//  211 	dbg_printf("K is:		");
+//  212 	for(i=0;i<L_KEY;i++)
+//  213 		dbg_printf("%02x ",K[i]);
+//  214 	dbg_printf("\n");
+//  215 	dbg_printf("fi5 is:		%02x\n",fi5);
+//  216 	dbg_printf("RAND is:	");
+//  217 	for(i=0;i<L_RAND;i++)
+//  218 		dbg_printf("%02x ",RAND[i]);
+//  219 	dbg_printf("\n");
+//  220 	dbg_printf("Fmk is:		");
+//  221 	for(i=0;i<L_FMK;i++)
+//  222 		dbg_printf("%02x ",Fmk[i]);
+//  223 	dbg_printf("\n");
+//  224 	dbg_printf("\n");
+//  225 	f5(K,fi5,RAND,Fmk,AK);
+??CrossCallReturnLabel_28:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 232
+        RCALL	?Subroutine0
+??CrossCallReturnLabel_81:
+        RCALL	?Subroutine12
+//  226 	dbg_printf("output section\n");
+//  227 	dbg_printf("f5 	AK:	");
+//  228 	for (i=0;i<L_AK;i++)
+//  229 		dbg_printf("%02x ",AK[i]);
+//  230 	dbg_printf("\n");
+//  231         RAND_AUTN[0] = 16;
+??CrossCallReturnLabel_26:
+        LDI	R16, 16
+        STD	Y+54, R16
+//  232         for(i=0; i<16; i++)
+        RCALL	?Subroutine21
+//  233           RAND_AUTN[1+i] = RAND[i];
+??CrossCallReturnLabel_49:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_20:
+        LDD	R16, Z+2
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_21:
+        STD	Z+55, R16
+        ADIW	R25:R24, 1
+        CPI	R24, 16
+        RCALL	??Subroutine5_0
+??CrossCallReturnLabel_8:
+        BRLT	??CrossCallReturnLabel_49
+//  234         RAND_AUTN[17] = 16;
+        LDI	R16, 16
+        MOVW	R31:R30, R29:R28
+        ADIW	R31:R30, 63
+        STD	Z+8, R16
+//  235         for(i=0; i<6; i++)
+        RCALL	?Subroutine21
+//  236           RAND_AUTN[18+i] = SQN[i] ^ AK[i];
+??CrossCallReturnLabel_50:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_22:
+        LDD	R16, Z+18
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_23:
+        LDD	R17, Z+24
+        EOR	R17, R16
+        MOVW	R31:R30, R29:R28
+        SUBI	R30, 184
+        SBCI	R31, 255
+        ADD	R30, R24
+        ADC	R31, R25
+        ST	Z, R17
+        ADIW	R25:R24, 1
+        CPI	R24, 6
+        RCALL	??Subroutine5_0
+??CrossCallReturnLabel_9:
+        BRLT	??CrossCallReturnLabel_50
+//  237         RAND_AUTN[24] = AMF[0];
+        LD	R16, Y
+        MOVW	R31:R30, R29:R28
+        ADIW	R31:R30, 63
+        STD	Z+15, R16
+//  238         RAND_AUTN[25] = AMF[1];
+        LDD	R16, Y+1
+        MOVW	R31:R30, R29:R28
+        ADIW	R31:R30, 63
+        STD	Z+16, R16
+//  239         for(i=0; i<8; i++)
+        RCALL	?Subroutine21
+//  240           RAND_AUTN[26+i] = MACA[i];
+??CrossCallReturnLabel_51:
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_24:
+        LDD	R16, Z+30
+        MOVW	R31:R30, R29:R28
+        SUBI	R30, 176
+        SBCI	R31, 255
+        ADD	R30, R24
+        ADC	R31, R25
+        ST	Z, R16
+        RCALL	?Subroutine5
+??CrossCallReturnLabel_7:
+        BRLT	??CrossCallReturnLabel_51
+//  241         run_aka(RAND_AUTN,34,RAND_AUTN);
+        MOVW	R21:R20, R29:R28
+        SUBI	R20, 202
+        SBCI	R21, 255
+        LDI	R18, 34
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 202
+        SBCI	R17, 255
+        RCALL	run_aka
+//  242 
+//  243 	pause();
+//  244 	dbg_printf("\n");
+//  245 	dbg_printf("\n");
+//  246 	dbg_printf("test vector for f1*:\n");
+//  247 	dbg_printf("input section\n");
+//  248 	dbg_printf("K is:		");
+//  249 	for(i=0;i<L_KEY;i++)
+//  250 		dbg_printf("%02x ",K[i]);
+//  251 	dbg_printf("\n");
+//  252 	dbg_printf("fi1star is:	%02x\n",fi1star);
+//  253 	dbg_printf("RAND is:	");
+//  254 	for(i=0;i<L_RAND;i++)
+//  255 		dbg_printf("%02x ",RAND[i]);
+//  256 	dbg_printf("\n");
+//  257 	dbg_printf("Fmk is:		");
+//  258 	for(i=0;i<L_FMK;i++)
+//  259 		dbg_printf("%02x ",Fmk[i]);
+//  260 	dbg_printf("\n");
+//  261 	dbg_printf("SQN is:		");
+//  262 	for(i=0;i<L_SQN;i++)
+//  263 		dbg_printf("%02x ",SQN[i]);
+//  264 	dbg_printf("\n");
+//  265 	dbg_printf("AMF is:		%02x %02x\n",AMF[0],AMF[1]);
+//  266 
+//  267 	dbg_printf("\n");
+//  268 	f1star(K,fi1star,RAND,Fmk,SQN,AMF,MACS);
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 168
+        RCALL	?Subroutine2
+??CrossCallReturnLabel_86:
+        LDD	R18, Z+2
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_59:
+        RCALL	f1star
+//  269 	dbg_printf("output section\n");
+//  270 	dbg_printf("f1* 	MACS:	");
+//  271 	for(i=0;i<L_MACS;i++)
+//  272 		dbg_printf("%02x ",MACS[i]);
+//  273 	for(i=0;i<L_SQN;i++)
+        RCALL	?Subroutine21
+//  274 		SQN[i]=0x00;
+??CrossCallReturnLabel_52:
+        LDI	R16, 0
+        RCALL	?Subroutine10
+??CrossCallReturnLabel_25:
+        STD	Z+18, R16
+        ADIW	R25:R24, 1
+        CPI	R24, 6
+        CPC	R25, R16
+        BRLT	??CrossCallReturnLabel_52
+//  275 	AMF[0]=AMF[1]=0;
+        STD	Y+1, R16
+        ST	Y, R16
+//  276 	dbg_printf("\n");
+//  277 
+//  278 	pause();
+//  279 
+//  280 	dbg_printf("\n");
+//  281 	dbg_printf("\n");
+//  282 	dbg_printf("test vector for f2:\n");
+//  283 	dbg_printf("input section\n");
+//  284 	dbg_printf("K is:		");
+//  285 	for(i=0;i<L_KEY;i++)
+//  286 		dbg_printf("%02x ",K[i]);
+//  287 	dbg_printf("\n");
+//  288 	dbg_printf("fi2 is:		%02x\n",fi2);
+//  289 	dbg_printf("RAND is:	");
+//  290 	for(i=0;i<L_RAND;i++)
+//  291 		dbg_printf("%02x ",RAND[i]);
+//  292 	dbg_printf("\n");
+//  293 	dbg_printf("Fmk is:		");
+//  294 	for(i=0;i<L_FMK;i++)
+//  295 		dbg_printf("%02x ",Fmk[i]);
+//  296 	dbg_printf("\n");
+//  297 	dbg_printf("\n");
+//  298 	f2(K,fi2,RAND,Fmk,RES,L_RES);
+        LDI	R16, 16
+        RCALL	?Subroutine26
+??CrossCallReturnLabel_67:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 104
+        RCALL	?Subroutine22
+??CrossCallReturnLabel_53:
+        SUBI	R20, 250
+        SBCI	R21, 255
+        MOVW	R31:R30, R27:R26
+        RCALL	?Subroutine14
+//  299 	dbg_printf("output section\n");
+//  300 	dbg_printf("f2 	RES:	");
+//  301 	for (i=0;i<L_RES;i++)
+//  302 		dbg_printf("%02x ",RES[i]);
+//  303 	dbg_printf("\n");
+//  304 
+//  305 	pause();
+//  306 
+//  307 	dbg_printf("\n");
+//  308 	dbg_printf("\n");
+//  309 	dbg_printf("test vector for f3:\n");
+//  310 	dbg_printf("input section\n");
+//  311 	dbg_printf("K is:		");
+//  312 	for(i=0;i<L_KEY;i++)
+//  313 		dbg_printf("%02x ",K[i]);
+//  314 	dbg_printf("\n");
+//  315 	dbg_printf("fi3 is:		%02x\n",fi3);
+//  316 	dbg_printf("RAND is:	");
+//  317 	for(i=0;i<L_RAND;i++)
+//  318 		dbg_printf("%02x ",RAND[i]);
+//  319 	dbg_printf("\n");
+//  320 	dbg_printf("Fmk is:		");
+//  321 	for(i=0;i<L_FMK;i++)
+//  322 		dbg_printf("%02x ",Fmk[i]);
+//  323 	dbg_printf("\n");
+//  324 
+//  325 	dbg_printf("\n");
+//  326 	f3(K,fi3,RAND,Fmk,CK);
+??CrossCallReturnLabel_30:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 154
+        RCALL	?Subroutine0
+??CrossCallReturnLabel_82:
+        RCALL	?Subroutine15
+//  327 	dbg_printf("output section\n");
+//  328 	dbg_printf("f3 	CK:	");
+//  329 	for (i=0;i<L_CK;i++)
+//  330 		dbg_printf("%02x ",CK[i]);
+//  331 	dbg_printf("\n");
+//  332 
+//  333 	pause();
+//  334 
+//  335 	dbg_printf("\n");
+//  336 	dbg_printf("\n");
+//  337 	dbg_printf("test vector for f4:\n");
+//  338 	dbg_printf("input section\n");
+//  339 	dbg_printf("K is:		");
+//  340 	for(i=0;i<L_KEY;i++)
+//  341 		dbg_printf("%02x ",K[i]);
+//  342 	dbg_printf("\n");
+//  343 	dbg_printf("fi4 is:		%02x\n",fi4);
+//  344 	dbg_printf("RAND is:	");
+//  345 	for(i=0;i<L_RAND;i++)
+//  346 		dbg_printf("%02x ",RAND[i]);
+//  347 	dbg_printf("\n");
+//  348 	dbg_printf("Fmk is:		");
+//  349 	for(i=0;i<L_FMK;i++)
+//  350 		dbg_printf("%02x ",Fmk[i]);
+//  351 	dbg_printf("\n");
+//  352 
+//  353 	dbg_printf("\n");
+//  354 	f4(K,fi4,RAND,Fmk,IK);
+??CrossCallReturnLabel_32:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 138
+        RCALL	?Subroutine0
+??CrossCallReturnLabel_83:
+        LDD	R18, Z+5
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_60:
+        RCALL	f4
+//  355 	dbg_printf("output section\n");
+//  356 	dbg_printf("f4 	IK:	");
+//  357 	for (i=0;i<L_IK;i++)
+//  358 		dbg_printf("%02x ",IK[i]);
+//  359 	dbg_printf("\n");
+//  360 
+//  361 	pause();
+//  362 
+//  363 	dbg_printf("\n");
+//  364 	dbg_printf("\n");
+//  365 	dbg_printf("test vector for f5*\n");
+//  366 	dbg_printf("input section\n");
+//  367 	dbg_printf("K is:		");
+//  368 	for(i=0;i<L_KEY;i++)
+//  369 		dbg_printf("%02x ",K[i]);
+//  370 	dbg_printf("\n");
+//  371 	dbg_printf("fi5* is:	%02x\n",fi5star);
+//  372 	dbg_printf("RAND is:	");
+//  373 	for(i=0;i<L_RAND;i++)
+//  374 		dbg_printf("%02x ",RAND[i]);
+//  375 	dbg_printf("\n");
+//  376 	dbg_printf("Fmk is:		");
+//  377 	for(i=0;i<L_FMK;i++)
+//  378 		dbg_printf("%02x ",Fmk[i]);
+//  379 	dbg_printf("\n");
+//  380 	dbg_printf("\n");
+//  381 	f5star(K,fi5star,RAND,Fmk,AKS);
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 160
+        RCALL	?Subroutine0
+??CrossCallReturnLabel_84:
+        RCALL	?Subroutine16
+//  382 	dbg_printf("output section\n");
+//  383 	dbg_printf("f5* 	AKS:	");
+//  384 	for (i=0;i<L_AKS;i++)
+//  385 		dbg_printf("%02x ",AKS[i]);
+//  386 	dbg_printf("\n");
+//  387 
+//  388 	pause();
+//  389         dbg_printf("\n");
+//  390         dbg_printf("\n");
+//  391         dbg_printf("test vector for f11\n");
+//  392         dbg_printf("input section\n");
+//  393         dbg_printf("K is: ");
+//  394         for(i=0;i<L_KEY;i++)
+//  395           dbg_printf("%02x ",K[i]);
+//  396         dbg_printf("\n");
+//  397         dbg_printf("fi11 is: %02x\n",fi11);
+//  398         dbg_printf("RAND is: ");
+//  399         for(i=0;i<L_RAND;i++)
+//  400           dbg_printf("%02x ",RAND[i]);
+//  401         dbg_printf("\n");
+//  402         dbg_printf("Fmk is: ");
+//  403         for(i=0;i<L_FMK;i++)
+//  404           dbg_printf("%02x ",Fmk[i]);
+//  405         dbg_printf("\n");
+//  406         dbg_printf("\n");
+//  407         f11(K,fi11,RAND,Fmk,UAK);
+??CrossCallReturnLabel_34:
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 122
+        RCALL	?Subroutine22
+??CrossCallReturnLabel_54:
+        SUBI	R20, 252
+        SBCI	R21, 255
+        LDI	R18, 80
+        ADIW	R27:R26, 8
+        MOVW	R17:R16, R27:R26
+        RCALL	f11
+//  408         dbg_printf("output section\n");
+//  409         dbg_printf("f11 UAK: ");
+//  410         for (i=0;i<L_UAK;i++)
+//  411           dbg_printf("%02x ",UAK[i]);
+//  412         dbg_printf("\n");
+//  413         pause();
+//  414 }
+        ADIW	R29:R28, 63
+        ADIW	R29:R28, 63
+        ADIW	R29:R28, 56
+        LDI	R30, 4
+        RJMP	?EPILOGUE_B4_L09
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine21:
+        LDI	R24, 0
+        LDI	R25, 0
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine16:
+        LDD	R18, Z+7
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_65:
+        RJMP	f5star
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine15:
+        LDD	R18, Z+4
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_64:
+        RJMP	f3
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine14:
+        LDD	R18, Z+3
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_63:
+        RJMP	f2
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine24:
+        MOVW	R17:R16, R27:R26
+        SUBI	R16, 248
+        SBCI	R17, 255
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine13:
+        LDD	R18, Z+1
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_62:
+        RJMP	f1
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine12:
+        LDD	R18, Z+6
+        RCALL	?Subroutine24
+??CrossCallReturnLabel_61:
+        RJMP	f5
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine10:
+        MOVW	R31:R30, R29:R28
+        ADD	R30, R24
+        ADC	R31, R25
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine6:
+        SBCI	R23, 255
+        MOVW	R21:R20, R27:R26
+        SUBI	R20, 232
+        SBCI	R21, 255
+        LD	R18, X
+        MOVW	R17:R16, R29:R28
+        SUBI	R16, 90
+        SBCI	R17, 255
+        RJMP	f0
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine5:
+        ADIW	R25:R24, 1
+        CPI	R24, 8
+??Subroutine5_0:
+        LDI	R16, 0
+        CPC	R25, R16
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine22:
+        SBCI	R17, 255
+        ST	-Y, R17
+        ST	-Y, R16
+        MOVW	R23:R22, R27:R26
+        SUBI	R22, 232
+        SBCI	R23, 255
+        MOVW	R21:R20, R29:R28
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine2:
+        RCALL	?Subroutine23
+??CrossCallReturnLabel_57:
+        SUBI	R16, 254
+        RCALL	?Subroutine23
+??CrossCallReturnLabel_58:
+        SUBI	R16, 234
+        RCALL	?Subroutine22
+??CrossCallReturnLabel_56:
+        SUBI	R20, 248
+        REQUIRE ?Subroutine29
+        ;		// Fall through to label ?Subroutine29
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine29:
+        SBCI	R21, 255
+??Subroutine29_0:
+        MOVW	R31:R30, R27:R26
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine23:
+        SBCI	R17, 255
+        ST	-Y, R17
+        ST	-Y, R16
+        MOVW	R17:R16, R29:R28
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+        RCALL	?Subroutine22
+??CrossCallReturnLabel_55:
+        SUBI	R20, 252
+        RJMP	?Subroutine29
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for <Constant "abcdbcdecdefdefge`:
+        DB 61H, 62H, 63H, 64H, 62H, 63H, 64H, 65H
+        DB 63H, 64H, 65H, 66H, 64H, 65H, 66H, 67H
+        DB 65H, 66H, 67H, 68H, 66H, 67H, 68H, 69H
+        DB 67H, 68H, 69H, 6AH, 68H, 69H, 6AH, 6BH
+        DB 69H, 6AH, 6BH, 6CH, 6AH, 6BH, 6CH, 6DH
+        DB 6BH, 6CH, 6DH, 6EH, 6CH, 6DH, 6EH, 6FH
+        DB 6DH, 6EH, 6FH, 70H, 6EH, 6FH, 70H, 71H
+        DB 0
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_I>`:
+        DW	SFE(NEAR_I) - SFB(NEAR_I)
+        DW	SFB(NEAR_I)
+        DW	SFB(NEAR_ID)
+        REQUIRE ?need_segment_init
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for fi0>`:
+        DB 65
+`?<Initializer for fi1>`:
+        DB 66
+`?<Initializer for fi1star>`:
+        DB 67
+`?<Initializer for fi2>`:
+        DB 68
+`?<Initializer for fi3>`:
+        DB 69
+`?<Initializer for fi4>`:
+        DB 70
+`?<Initializer for fi5>`:
+        DB 71
+`?<Initializer for fi5star>`:
+        DB 72
+`?<Initializer for K>`:
+        DB 173, 27, 90, 21, 155, 232, 107, 44, 166, 108, 122, 228, 11, 186, 155
+        DB 157
+`?<Initializer for Fmk>`:
+        DB 65, 72, 65, 71
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for msg_data>`:
+        DW `?<Constant "abcdbcdecdefdefgefghf...">`
+
+        RSEG NEAR_F:CODE:NOROOT(0)
+`?<Constant {(uchar)'\\260', (uchar)'\\253', (uch`:
+        DB 176, 171, 185, 157, 106, 198, 167, 78, 185, 142, 182, 194, 218, 177
+        DB 165, 81
+        DB 0, 0, 0, 0, 0, 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,025H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,020H
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,021H
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,022H
+__?EEARH:
+
+        END
+// 
+//   1 byte  in segment ABSOLUTE
+// 898 bytes in segment CODE
+//   7 bytes in segment EEPROM_I
+//   6 bytes in segment INITTAB
+//  22 bytes in segment NEAR_F
+//  87 bytes in segment NEAR_I
+//  87 bytes in segment NEAR_ID
+// 
+// 1 007 bytes of CODE  memory (+ 6 bytes shared)
+//    87 bytes of DATA  memory (+ 1 byte  shared)
+//     7 bytes of XDATA memory
+//
+//Errors: none
+//Warnings: none

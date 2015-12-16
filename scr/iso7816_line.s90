@@ -1,0 +1,345 @@
+;iso7816asm.s90 2005-10-7
+
+#include <ioavr.h>
+#include "iso7816.h"
+
+        NAME  iso7816_line
+
+        PUBLIC SendChar
+        PUBLIC GetChar
+        PUBLIC timer1_start
+        PUBLIC timer1_stop
+        PUBLIC load_one_etu
+        PUBLIC load_half_etu
+        PUBLIC load_custom_etu
+        PUBLIC ReverseByte
+
+        EXTERN TMR1_0P5ETUH
+        EXTERN TMR1_0P5ETUL
+        EXTERN TMR1_1P0ETUH
+        EXTERN TMR1_1P0ETUL
+        EXTERN TMR1_VOLATH
+        EXTERN TMR1_VOLATL
+        EXTERN TIMEOUT_COUNTE
+        EXTERN TIMEOUT_COUNTH
+        EXTERN TIMEOUT_COUNTL
+        EXTERN RESEND_TIMES
+        EXTERN ERROR_STATUS
+        EXTERN ERROR_CODE
+
+DELAY   MACRO  ;TIMEOUT,REGISTER delay @0*3 cycles
+        LOCAL loop_delay
+	LDI \2,\1
+loop_delay:
+	dec \2
+	brne loop_delay
+        ENDM
+
+WAIT_TIME_FLAG  MACRO
+                SBIS	TIFR1,0x01
+	        RJMP	$-2
+                ENDM
+
+TIMER_COMP_FLAG_CLR MACRO
+	            SBI TIFR1,0x01
+                    ENDM
+
+
+START_BIT_ON  MACRO
+	      PUSH    ZH
+	      PUSH    ZL
+	      PUSH    TEMP0
+	      LDS     TEMP0,TIMEOUT_COUNTE
+StartBitOn_1:
+	      LDS     ZH,TIMEOUT_COUNTH
+	      LDS     ZL,TIMEOUT_COUNTL
+StartBitOn_0:
+	    SBIS	PIND,CARD_STATUS
+	    RJMP	CardGone
+	    SBIS 	PINB,C7_DATA
+	    RJMP 	EndStartBitOn
+	
+	    SBIW	ZH:ZL,1
+	    BRNE	StartBitOn_0	;IGNORE LOW BYTE
+	    DEC		TEMP0
+	    BRNE	StartBitOn_1
+
+	    LDI		ZL,ICC_MUTE		;time out
+	    STS		ERROR_CODE,ZL
+	    LDI		ZL,ICC_PRESENT|PROCESSED_FAILED
+	    STS 	ERROR_STATUS,ZL
+	    RJMP 	EndStartBitOn
+CardGone:
+	    LDI		ZL,ICC_MUTE		;time out
+	    STS		ERROR_CODE,ZL
+	    LDI		ZL,ICC_ABSENT|PROCESSED_FAILED
+	    STS 	ERROR_STATUS,ZL
+EndStartBitOn:
+	    POP		TEMP0
+	    POP 	ZL
+	    POP		ZH
+            ENDM
+
+;IAR Calling convention
+;Scratch registers R0–R3, R16–R23, and R30–R31
+;Preserved registers R4–R15 and R24–R27
+;Register assignment using the old calling convention
+;f(b1,b2,…) R16 R20
+;f(b1,w2,…) R16 R20, R21
+;f(w1,l1,…) R16, R17 R20, R21, R22, R23
+;f(l1,b2,…) R16, R17, R18, R19 R20
+;f(l1,l2,…) R16, R17, R18, R19 R20, R21, R22, R23
+;(Even though this convention is not used by default,
+;it is recommended for use when mixing C and assembler code)
+#define   TEMP0		  R20
+#define   TEMP1_CHAR      R16
+#define   TEMP2_COUNT     R17
+#define   TEMP3           R18
+#define   PARITY          R19
+
+        RSEG CODE:CODE:NOROOT(1)
+timer1_start:
+        LDI	TEMP0, 9
+        STS	TCCR1B, TEMP0
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+timer1_stop:
+        LDI	TEMP0, 8
+        STS	TCCR1B, TEMP0
+        LDI	TEMP0, 0
+        STS	TCNT1H, TEMP0
+        STS	TCNT1L, TEMP0
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+load_one_etu:
+        LDS	TEMP0, TMR1_1P0ETUH
+        STS	OCR1AH, TEMP0
+        LDS	TEMP0, TMR1_1P0ETUL
+        RJMP	?Subroutine1
+
+        RSEG CODE:CODE:NOROOT(1)
+load_half_etu:
+        LDS	TEMP0, TMR1_0P5ETUH
+        STS	OCR1AH, TEMP0
+        LDS	TEMP0, TMR1_0P5ETUL
+        RJMP	?Subroutine1
+
+        RSEG CODE:CODE:NOROOT(1)
+load_custom_etu:
+        LDS	TEMP0, TMR1_VOLATH
+        STS	OCR1AH, TEMP0
+        LDS	TEMP0, TMR1_VOLATL
+        REQUIRE ?Subroutine1
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        STS	OCR1AL, TEMP0
+        RET
+
+           RSEG CODE:CODE:NOROOT(1)
+;extern __version_1 char SendChar(uchar ch);
+;para ch: char to send
+;return: ch, other value error.
+;global: ERROR_CODE,ERROR_STATUS
+SendChar:
+	TIMER_COMP_FLAG_CLR
+	rcall timer1_start
+	WAIT_TIME_FLAG
+	rcall timer1_stop
+
+RESENDCHAR:
+	CLR PARITY
+	SBIC GPIOR0,REVERSE_FLAG	;IF THE CARD IS  "inverse convention",TOGGLE PARITY
+	INC PARITY	;wgq
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;For test only 2005-8-1
+;	lds	 temp0,WriteParityErrorCount
+;	sbrs temp0,0
+;	INC PARITY 		;TEST CHECK ERROR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	LDI TEMP2_COUNT,8
+
+	rcall timer1_start
+	SBI DDRB,C7_DATA	;SET DATA OUTPUT
+	CBI PORTB,C7_DATA
+
+SENDCHAR_NEXT_BIT:
+	TIMER_COMP_FLAG_CLR	;WAIT START BIT END AT FIRST TIME , OTHERWISE WAIT ONE ETU
+	WAIT_TIME_FLAG
+
+	ROR TEMP1_CHAR
+	BRCS SENDBIT1
+	CBI PORTB,C7_DATA
+	RJMP BITSET
+SENDBIT1:
+	SBI PORTB,C7_DATA
+	INC PARITY
+BITSET:
+	DEC TEMP2_COUNT
+	BRNE SENDCHAR_NEXT_BIT
+	ROR TEMP1_CHAR	;RESTORE TEMP1_CHAR
+	
+	TIMER_COMP_FLAG_CLR	;WAIT LAST END
+	WAIT_TIME_FLAG
+
+	;SEND PARITY
+	SBRC PARITY,0
+	RJMP SENDPARITY1
+	CBI PORTB,C7_DATA
+	RJMP DELAYPARITY
+SENDPARITY1:	
+	SBI PORTB,C7_DATA
+DELAYPARITY:
+	TIMER_COMP_FLAG_CLR	;WAIT PARITY END
+	WAIT_TIME_FLAG
+
+	SBI PORTB,C7_DATA	;STOP BIT
+;CHECK ERROR
+	CBI DDRB,C7_DATA	;SET DATA INPUT
+	TIMER_COMP_FLAG_CLR	;WAIT ONE ETU
+	WAIT_TIME_FLAG
+
+	;LOOK FOR ERROR SIGNAL
+	CLC
+	SBIC PINB,C7_DATA
+	SEC
+	BRCS RETSENDBYTE
+;	rjmp RETSENDBYTE	
+;*******************************************************************
+;当卡拔出一半的时候会造成死循环,因此加上了一超时次数 yanglq 2005-9-4
+	ldi	TEMP0,255
+WAITFORENDOFERROR:
+	nop
+	nop
+	dec TEMP0				;1
+	breq RETSENDBYTE		;1/2
+	SBIC PINB,C7_DATA		;1/2
+	RJMP WAITFORENDOFERROR	;2	
+;*******************************************************************
+	rcall timer1_stop
+	rcall load_half_etu
+	TIMER_COMP_FLAG_CLR
+	rcall timer1_start
+	WAIT_TIME_FLAG
+	rcall timer1_stop
+	rcall load_one_etu
+	RJMP RESENDCHAR
+RETSENDBYTE:
+	TIMER_COMP_FLAG_CLR
+	WAIT_TIME_FLAG
+	TIMER_COMP_FLAG_CLR
+	WAIT_TIME_FLAG
+	rcall timer1_stop
+	RET
+
+      RSEG CODE:CODE:NOROOT(1)
+;extern __version_1 uchar GetChar(void);
+;para:    void
+;return: char have read
+;global: ERROR_CODE,ERROR_STATUS
+GetChar:
+        push TEMP3
+	push TEMP2_COUNT
+	
+	LDS TEMP3,RESEND_TIMES	;REQUEST RESEND TIMES,MAY BE LOAD FROM CFG MEMORY SPACE
+
+REGETCHAR:
+	START_BIT_ON
+	CLR PARITY
+	SBIC GPIOR0,REVERSE_FLAG	;IF THE CARD IS  "inverse convention",TOGGLE PARITY
+	INC PARITY
+	LDI TEMP2_COUNT,9
+
+	DELAY 10,TEMP0
+	rcall timer1_start
+GETCHAR_NEXT_BIT:
+	TIMER_COMP_FLAG_CLR	;WAIT START BIT END
+	WAIT_TIME_FLAG
+	
+	CLR TEMP0
+	SBIC PINB,C7_DATA
+	LDI TEMP0,1
+	ADD PARITY,TEMP0	;CACULATE PARITY
+
+	CLC
+	SBRC TEMP0,0
+	SEC
+	ROR TEMP1_CHAR
+	
+	DEC TEMP2_COUNT
+	BRNE GETCHAR_NEXT_BIT
+	
+	ROL TEMP1_CHAR ;NOW IS THE RESULT
+
+
+	TIMER_COMP_FLAG_CLR	;WAIT PARITY END
+	WAIT_TIME_FLAG
+
+#ifdef TEST_RESEND
+	ST Z+,TEMP1_CHAR
+#else
+	SBRS	PARITY, 0			; 1/2
+	CLR TEMP3
+#endif
+	TST TEMP3
+	BRNE REQUEST_RESEND		;REQUEST RESEND WHEN NOT TIMEOUT
+
+
+	TIMER_COMP_FLAG_CLR	;DELAY ONE ETU FOR GUARD TIME IS ENOUGH
+	WAIT_TIME_FLAG
+;	LONG_DELAY 352
+	rcall timer1_stop
+
+	pop TEMP2_COUNT
+	pop TEMP3
+	RET
+	
+REQUEST_RESEND:
+	DEC TEMP3
+	rcall timer1_stop
+	rcall load_custom_etu;wgq744
+	TIMER_COMP_FLAG_CLR
+	rcall timer1_start
+	WAIT_TIME_FLAG
+	rcall timer1_stop
+
+	SBI DDRB,C7_DATA
+	CBI PORTB,C7_DATA
+
+	rcall load_one_etu
+	TIMER_COMP_FLAG_CLR
+	rcall timer1_start
+	WAIT_TIME_FLAG
+	rcall timer1_stop
+
+	SBI PORTB,C7_DATA
+	CBI DDRB,C7_DATA
+
+	RJMP REGETCHAR
+
+; ######################## utility functions ########################
+;Reverse One Byte
+#define ByteOrg   R16
+#define ByteRev   R17
+#define Count     R18
+#define Const1    R19
+
+      RSEG CODE:CODE:NOROOT(1)
+;extern __version_1 uchar ReverseByte(uchar ch);
+;para:    ch to reverse
+;return: reversed ch
+ReverseByte:
+	ldi Count,8
+	ldi Const1,1
+loopbit:
+	eor ByteOrg,Const1
+	ror ByteOrg
+	rol ByteRev
+	dec Count	
+	brne loopbit
+	mov ByteOrg,ByteRev
+	ret
+
+        END
+
